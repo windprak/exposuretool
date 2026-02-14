@@ -19,9 +19,16 @@
   }
 
   /* Header */
-  .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; position: relative; }
   .header h1 { font-size: 1.1em; color: var(--red); letter-spacing: 1px; font-weight: 700; }
   .header span { font-size: 0.75em; color: var(--muted); }
+  .reset-btn {
+    position: absolute; right: 0; top: 0;
+    background: var(--card); border: 1px solid var(--border); color: var(--blue);
+    padding: 4px 10px; border-radius: 4px; font-size: 0.7em; cursor: pointer;
+    font-family: inherit; font-weight: 600;
+  }
+  .reset-btn:hover { background: var(--card2); border-color: var(--blue); }
 
   /* Inputs grid */
   .inputs {
@@ -162,6 +169,7 @@
     .profile-select { font-size: 0.95em; width: 100%; padding: 8px 6px; }
     .header h1 { font-size: 0.95em; }
     .header > span { width: 100%; font-size: 0.65em; }
+    .reset-btn { position: static; font-size: 0.65em; padding: 6px 10px; width: 100%; margin-top: 4px; }
     .disclaimer { font-size: 0.68em; }
     .disclaimer summary { padding: 6px 10px; }
     .disclaimer p { padding: 0 10px 8px 10px; }
@@ -214,6 +222,7 @@
   </select>
   <h1 id="headerTitle">EXPOSURE</h1>
   <span>Lightmeter App &rarr; EV mode &rarr; 3 readings &rarr; go</span>
+  <button class="reset-btn" id="resetBtn">Reset to Default</button>
 </div>
 
 <!-- INPUTS - one compact row -->
@@ -1276,6 +1285,7 @@ function initApp() {
 
     // Profile selector
     document.getElementById('profileSelect').addEventListener('change', function() {
+      sessionStorage.setItem('selectedProfile', this.value);
       loadProfile(this.value);
     });
 
@@ -1284,8 +1294,18 @@ function initApp() {
       setMode(currentMode === 'motion' ? 'stills' : 'motion');
     });
 
-    // Load default profile
-    loadProfile('red_komodo');
+    // Reset button - clear saved settings for current profile and reload
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      var profileKey = document.getElementById('profileSelect').value;
+      sessionStorage.removeItem('cameraSettings_' + profileKey);
+      loadProfile(profileKey);
+      analyze();
+    });
+
+    // Load saved profile or default to red_komodo
+    var savedProfile = sessionStorage.getItem('selectedProfile') || 'red_komodo';
+    document.getElementById('profileSelect').value = savedProfile;
+    loadProfile(savedProfile);
   } catch(e) {
     document.body.innerHTML = '<div style="color:red;padding:20px;font-size:14px;"><b>Init error:</b> ' + e.message + '<br><br>' + e.stack + '</div>';
   }
