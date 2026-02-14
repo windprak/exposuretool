@@ -1148,7 +1148,7 @@ function analyze() {
       <div style="font-size:0.55em;color:${color};font-weight:700;white-space:nowrap;background:rgba(0,0,0,0.85);padding:1px 5px;border-radius:3px;margin-top:${pos==='top'?'1px':'auto'}">${label}</div>
       ${pos==='top'?'<div style="flex:1;width:2px;background:'+color+'"></div>':''}
       ${pos==='bot'?'<div style="flex:1;width:2px;background:'+color+'"></div>':''}
-      <div style="font-size:0.5em;color:${color};background:rgba(0,0,0,0.85);padding:1px 4px;border-radius:3px;margin-bottom:${pos==='bot'?'1px':'auto'}">EV ${ev}</div>
+      <div style="font-size:0.5em;color:${color};background:rgba(0,0,0,0.85);padding:1px 4px;border-radius:3px;margin-bottom:${pos==='bot'?'1px':'auto'}">EV ${ev.toFixed(1)}</div>
     </div>`;
   }
 
@@ -1183,11 +1183,11 @@ function analyze() {
     // MID and SKIN target markers on RED scale
     const midRedPct = evToPct(blackClipEV + (midStop - 1) * (TOTAL_DR / 15));
     const skinRedPct = evToPct(blackClipEV + (skinStop - 1) * (TOTAL_DR / 15));
-    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,midRedPct))}%;">
+    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,midRedPct))}%;top:4px;">
       <div class="tri tri-up" style="border-bottom-color:#2ecc71;"></div>
       <div class="lbl" style="color:#2ecc71;">MID ${midStop.toFixed(1)}</div>
     </div>`;
-    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,skinRedPct))}%;">
+    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,skinRedPct))}%;top:4px;">
       <div class="tri tri-up" style="border-bottom-color:#e8a87c;"></div>
       <div class="lbl" style="color:#e8a87c;">SKIN ${skinStop.toFixed(1)}</div>
     </div>`;
