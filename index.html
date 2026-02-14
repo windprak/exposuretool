@@ -430,6 +430,7 @@ const PROFILES = {
     name: 'RED Komodo', shortName: 'RED KOMODO',
     type: 'digital-cinema', defaultMode: 'motion',
     nativeISO: 800, isoLabel: 'ISO', isoIsMetadata: true,
+    defaults: { aperture: '2.8', nd: 4, fps: '24-180' },
     isoData: [
       { iso: 320,  aboveMid: 4.2, belowMid: 8.3, best: 'shadow' },
       { iso: 400,  aboveMid: 4.5, belowMid: 8.0, best: 'shadow' },
@@ -451,6 +452,7 @@ const PROFILES = {
     name: 'ARRI Alexa Mini', shortName: 'ALEXA MINI',
     type: 'digital-cinema', defaultMode: 'motion',
     nativeISO: 800, isoLabel: 'EI', isoIsMetadata: true,
+    defaults: { aperture: '2.8', nd: 4, fps: '24-180' },
     isoData: [
       { iso: 160,  aboveMid: 5.5, belowMid: 8.0, best: 'shadow' },
       { iso: 200,  aboveMid: 5.8, belowMid: 7.7, best: 'shadow' },
@@ -471,6 +473,7 @@ const PROFILES = {
     name: 'Leica M11', shortName: 'LEICA M11',
     type: 'digital-stills', defaultMode: 'stills',
     nativeISO: 64, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/60' },
     isoData: [
       { iso: 64,   aboveMid: 8.0, belowMid: 6.5, best: 'balanced' },
       { iso: 100,  aboveMid: 7.5, belowMid: 6.3, best: 'balanced' },
@@ -489,6 +492,7 @@ const PROFILES = {
     name: 'Kodak Vision3 50D', shortName: '50D',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 50, isoLabel: 'EI', isoIsMetadata: false,
+    defaults: { aperture: '2.8', nd: 2, fps: '24-180' },
     isoData: [
       { iso: 25,  aboveMid: 8.0, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
       { iso: 50,  aboveMid: 7.5, belowMid: 6.0, best: 'balanced', label: 'Rated' },
@@ -503,6 +507,7 @@ const PROFILES = {
     name: 'Kodak Vision3 250D', shortName: '250D',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
+    defaults: { aperture: '2.8', nd: 3, fps: '24-180' },
     isoData: [
       { iso: 125, aboveMid: 7.5, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
       { iso: 250, aboveMid: 7.0, belowMid: 6.0, best: 'balanced', label: 'Rated' },
@@ -517,6 +522,7 @@ const PROFILES = {
     name: 'Kodak Vision3 500T', shortName: '500T',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 500, isoLabel: 'EI', isoIsMetadata: false,
+    defaults: { aperture: '2', nd: 0, fps: '24-180' },
     isoData: [
       { iso: 250, aboveMid: 7.5, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
       { iso: 500, aboveMid: 7.0, belowMid: 5.5, best: 'balanced', label: 'Rated' },
@@ -531,6 +537,7 @@ const PROFILES = {
     name: 'Kodak Double-X', shortName: 'XX B&W',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
+    defaults: { aperture: '2.8', nd: 1, fps: '24-180' },
     isoData: [
       { iso: 125, aboveMid: 6.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
       { iso: 250, aboveMid: 5.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
@@ -595,6 +602,28 @@ function loadProfile(key) {
     || activeProfile.isoData.find(d => d.label === 'Rated' || d.best === 'balanced')
     || activeProfile.isoData[0];
   isoSel.value = defaultEntry.iso;
+
+  // Load saved settings from sessionStorage or use profile defaults
+  const savedSettings = sessionStorage.getItem('cameraSettings_' + key);
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    document.getElementById('camAperture').value = settings.aperture || activeProfile.defaults.aperture;
+    document.getElementById('camND').value = settings.nd || activeProfile.defaults.nd;
+    if (currentMode === 'motion' && settings.fps) {
+      document.getElementById('fps').value = settings.fps;
+    } else if (currentMode === 'stills' && settings.shutterSpeed) {
+      document.getElementById('shutterSpeed').value = settings.shutterSpeed;
+    }
+  } else {
+    // Apply profile defaults
+    document.getElementById('camAperture').value = activeProfile.defaults.aperture;
+    document.getElementById('camND').value = activeProfile.defaults.nd;
+    if (currentMode === 'motion' && activeProfile.defaults.fps) {
+      document.getElementById('fps').value = activeProfile.defaults.fps;
+    } else if (currentMode === 'stills' && activeProfile.defaults.shutterSpeed) {
+      document.getElementById('shutterSpeed').value = activeProfile.defaults.shutterSpeed;
+    }
+  }
 
   // Update page title and header
   document.title = `${activeProfile.name} Exposure — Lightmeter App`;
@@ -1220,12 +1249,28 @@ function initApp() {
       });
     });
 
+    // Function to save camera settings to sessionStorage
+    function saveCameraSettings() {
+      const profileKey = document.getElementById('profileSelect').value;
+      const settings = {
+        aperture: document.getElementById('camAperture').value,
+        nd: document.getElementById('camND').value,
+        fps: document.getElementById('fps').value,
+        shutterSpeed: document.getElementById('shutterSpeed').value
+      };
+      sessionStorage.setItem('cameraSettings_' + profileKey, JSON.stringify(settings));
+    }
+
     // Event listeners for inputs
     ['evHL','evSubj','evSH','camAperture','camND','fps','meterASA','camISO','shutterSpeed'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) {
         el.addEventListener('input', analyze);
         el.addEventListener('change', analyze);
+        // Save camera settings when user changes aperture, ND, fps, or shutter
+        if (['camAperture', 'camND', 'fps', 'shutterSpeed'].indexOf(id) !== -1) {
+          el.addEventListener('change', saveCameraSettings);
+        }
       }
     });
 
