@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RED Komodo Exposure — Lightmeter App</title>
+<style>
+  :root {
+    --bg: #111; --card: #1a1a1a; --card2: #222; --border: #333; --border2: #444;
+    --red: #e74c3c; --green: #2ecc71; --yellow: #f1c40f; --blue: #3498db;
+    --text: #ddd; --muted: #777; --dim: #555;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: var(--bg); color: var(--text);
+    max-width: 1150px; margin: 0 auto; padding: 12px 16px;
+    -webkit-user-select: none; user-select: none;
+  }
+
+  /* Header */
+  .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .header h1 { font-size: 1.1em; color: var(--red); letter-spacing: 1px; font-weight: 700; }
+  .header span { font-size: 0.75em; color: var(--muted); }
+
+  /* Inputs grid */
+  .inputs {
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px; margin-bottom: 12px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 3px; }
+  .input-group label { font-size: 0.65em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .input-group input, .input-group select {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 8px; border-radius: 5px; font-family: 'SF Mono', monospace; font-size: 0.85em;
+    width: 100%;
+  }
+  .input-group input:focus, .input-group select:focus { border-color: var(--red); outline: none; }
+  .input-group .hint { font-size: 0.6em; color: var(--dim); }
+
+  /* DR Bar - EV scale with sensor window */
+  .dr-container { margin: 10px 0; }
+  .dr-ev-scale {
+    position: relative; height: 12px;
+    display: flex; justify-content: space-between;
+    font-size: 0.5em; color: var(--dim); font-family: 'SF Mono', monospace;
+  }
+  .dr-ev-scale span { flex: none; width: 0; display: flex; justify-content: center; overflow: visible; white-space: nowrap; }
+  .dr-bar {
+    position: relative; height: 90px; border-radius: 5px; border: 1px solid var(--border);
+    background: #0a0a0a; overflow: visible;
+  }
+  .dr-red-ref {
+    position: relative; height: 20px; margin-top: 1px;
+    font-size: 0.45em; color: var(--red); font-family: 'SF Mono', monospace;
+    opacity: 0.6;
+  }
+  .dr-target {
+    position: absolute; top: 0; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; z-index: 2;
+  }
+  .dr-target .tri { width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; }
+  .dr-target .tri-up { border-bottom: 6px solid; }
+  .dr-target .lbl {
+    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.3px;
+    padding: 0 3px; white-space: nowrap; margin-top: 1px;
+  }
+
+  /* Results panels - side by side */
+  .results-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .panel {
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-size: 0.8em; line-height: 1.7;
+  }
+  .panel-title { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; font-weight: 600; }
+  .v { font-weight: 700; } .vr { color: var(--red); font-weight: 700; }
+  .vg { color: var(--green); font-weight: 700; } .vy { color: var(--yellow); font-weight: 700; }
+  .vb { color: var(--blue); font-weight: 700; }
+  .sep { border-top: 1px solid var(--border); margin: 6px 0; }
+
+  /* Camera settings bar */
+  .camera-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px;
+  }
+  .cam-setting {
+    background: var(--card); border: 1px solid var(--border); border-radius: 5px;
+    padding: 8px; text-align: center;
+  }
+  .cam-setting .cam-label { font-size: 0.6em; color: var(--muted); text-transform: uppercase; }
+  .cam-setting .cam-val { font-size: 1.2em; font-weight: 700; font-family: 'SF Mono', monospace; margin-top: 2px; }
+  .cam-setting select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 6px; border-radius: 4px; font-family: 'SF Mono', monospace;
+    font-size: 0.75em; width: 100%; margin-top: 4px; cursor: pointer;
+  }
+  .cam-setting select:focus { border-color: var(--red); outline: none; }
+
+  /* Collapsible tabs */
+  .tabs { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .tab-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tab-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--muted);
+    padding: 5px 12px; border-radius: 4px 4px 0 0; font-size: 0.7em; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--border2); }
+  .tab-btn.active { background: var(--card2); color: var(--text); border-color: var(--red); border-bottom-color: var(--card2); }
+  .tab-content {
+    display: none; background: var(--card2); border: 1px solid var(--border);
+    border-top: none; border-radius: 0 0 6px 6px; padding: 12px; font-size: 0.78em; line-height: 1.6;
+  }
+  .tab-content.active { display: block; }
+
+  /* Reference tables */
+  table.ref { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+  table.ref th { color: var(--yellow); padding: 4px 8px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9em; }
+  table.ref td { padding: 3px 8px; border-bottom: 1px solid #222; }
+  table.ref tr:hover { background: #2a2a2a; }
+  table.ref .native { background: rgba(231,76,60,0.1); }
+
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.8em; font-weight: 600; }
+  .badge-hl { background: rgba(241,196,15,0.15); color: var(--yellow); }
+  .badge-sh { background: rgba(52,152,219,0.15); color: var(--blue); }
+  .badge-bal { background: rgba(46,204,113,0.15); color: var(--green); }
+  .badge-native { background: rgba(231,76,60,0.15); color: var(--red); }
+
+  .note { font-size: 0.85em; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+  .footer { font-size: 0.6em; color: var(--dim); margin-top: 10px; text-align: center; }
+
+  /* Profile select */
+  .profile-select {
+    background: var(--card); border: 1px solid var(--border); color: var(--red);
+    font-size: 1.1em; font-weight: 700; letter-spacing: 1px; font-family: inherit;
+    padding: 2px 6px; border-radius: 4px; cursor: pointer;
+  }
+  /* Mode toggle */
+  .mode-toggle {
+    font-size: 0.8em; color: var(--blue); cursor: pointer; margin-left: 4px;
+    user-select: none; -webkit-user-select: none;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    body { zoom: 1; padding: 8px 10px; }
+    .header { flex-wrap: wrap; gap: 6px; }
+    .profile-select { font-size: 0.95em; width: 100%; padding: 8px 6px; }
+    .header h1 { font-size: 0.95em; }
+    .header > span { width: 100%; font-size: 0.65em; }
+    .inputs { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .input-group input, .input-group select { padding: 10px 8px; font-size: 0.9em; }
+    .camera-bar { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cam-setting { padding: 10px 8px; }
+    .cam-setting select { font-size: 0.85em; padding: 8px 6px; }
+    .mode-toggle { font-size: 0.9em; padding: 2px 6px; }
+    .results-row { grid-template-columns: 1fr; gap: 8px; }
+    .panel { font-size: 0.78em; line-height: 1.6; padding: 10px; }
+    .dr-bar { height: 80px; }
+    .tab-buttons { gap: 3px; }
+    .tab-btn { padding: 8px 10px; font-size: 0.68em; }
+    table.ref { font-size: 0.78em; }
+    table.ref th, table.ref td { padding: 4px 5px; }
+  }
+
+  @media (max-width: 420px) {
+    body { padding: 6px 8px; }
+    .profile-select { font-size: 0.85em; padding: 6px 4px; }
+    .inputs { grid-template-columns: 1fr 1fr; gap: 5px; }
+    .input-group label { font-size: 0.58em; }
+    .input-group input, .input-group select { padding: 8px 6px; font-size: 0.82em; }
+    .camera-bar { grid-template-columns: 1fr 1fr; gap: 5px; }
+    .cam-setting .cam-val { font-size: 1em; }
+    .cam-setting select { padding: 6px; }
+    .dr-bar { height: 70px; overflow: hidden; }
+    .panel { padding: 8px; font-size: 0.75em; }
+    .tab-btn { padding: 6px 8px; font-size: 0.62em; }
+    table.ref { font-size: 0.72em; }
+    table.ref th, table.ref td { padding: 3px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <select id="profileSelect" class="profile-select">
+    <option value="red_komodo">RED KOMODO</option>
+    <option value="arri_alexa_mini">ARRI ALEXA MINI</option>
+    <option value="leica_m11">LEICA M11</option>
+    <optgroup label="Film Stocks">
+      <option value="kodak_50d">KODAK 50D</option>
+      <option value="kodak_250d">KODAK 250D</option>
+      <option value="kodak_500t">KODAK 500T</option>
+      <option value="kodak_double_x">DOUBLE-X (B&W)</option>
+    </optgroup>
+  </select>
+  <h1 id="headerTitle">EXPOSURE</h1>
+  <span>Lightmeter App &rarr; EV mode &rarr; 3 readings &rarr; go</span>
+</div>
+
+<!-- INPUTS - one compact row -->
+<div class="inputs">
+  <div class="input-group">
+    <label style="color:var(--yellow);">Highlight EV</label>
+    <input type="number" id="evHL" value="14" step="0.1">
+    <div class="hint">window / sky</div>
+  </div>
+  <div class="input-group">
+    <label style="color:var(--green);">Subject EV</label>
+    <input type="number" id="evSubj" value="11" step="0.1">
+    <div class="hint">face / key area</div>
+  </div>
+  <div class="input-group">
+    <label style="color:var(--blue);">Shadow EV</label>
+    <input type="number" id="evSH" value="8" step="0.1">
+    <div class="hint">darkest detail</div>
+  </div>
+  <div class="input-group">
+    <label>Meter ASA</label>
+    <select id="meterASA">
+      <option value="100" selected>100</option><option value="200">200</option>
+      <option value="400">400</option><option value="800">800</option>
+    </select>
+    <div class="hint">LV app = 100</div>
+  </div>
+</div>
+
+<!-- DR VISUALIZATION - EV master scale with sensor window -->
+<div class="dr-container">
+  <div class="dr-ev-scale">
+    <span>-5</span><span>-4</span><span>-3</span><span>-2</span><span>-1</span><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
+  </div>
+  <div id="drBar" class="dr-bar"></div>
+  <div id="drRedRef" class="dr-red-ref"></div>
+</div>
+
+<!-- CAMERA SETTINGS BAR - the answer at a glance -->
+<div class="camera-bar">
+  <div class="cam-setting">
+    <div class="cam-label">Aperture</div>
+    <select id="camAperture">
+      <option value="1">f/1</option><option value="1.4">f/1.4</option><option value="2">f/2</option>
+      <option value="2.8">f/2.8</option><option value="4" selected>f/4</option><option value="5.6">f/5.6</option>
+      <option value="8">f/8</option><option value="11">f/11</option><option value="16">f/16</option>
+      <option value="22">f/22</option>
+    </select>
+  </div>
+  <div class="cam-setting">
+    <div class="cam-label">ND Filter</div>
+    <select id="camND">
+      <option value="0">NONE</option>
+      <option value="1">ND 0.3 (1)</option>
+      <option value="2">ND 0.6 (2)</option>
+      <option value="3">ND 0.9 (3)</option>
+      <option value="4" selected>ND 1.2 (4)</option>
+      <option value="5">ND 1.5 (5)</option>
+      <option value="6">ND 1.8 (6)</option>
+      <option value="7">ND 2.1 (7)</option>
+      <option value="8">ND 2.4 (8)</option>
+      <option value="9">ND 2.7 (9)</option>
+      <option value="10">ND 3.0 (10)</option>
+    </select>
+  </div>
+  <div class="cam-setting">
+    <div class="cam-label" id="isoLabel">ISO</div>
+    <select id="camISO"></select>
+  </div>
+  <div class="cam-setting">
+    <div class="cam-label">
+      <span id="shutterModeLabel">FPS / Shutter</span>
+      <span id="modeToggle" class="mode-toggle" title="Switch motion / stills">[M]</span>
+    </div>
+    <select id="fps" style="display:block;">
+      <optgroup label="180° (standard)">
+        <option value="24-180" selected>24 / 180° &middot; 1/48</option>
+        <option value="25-180">25 / 180° &middot; 1/50</option>
+        <option value="30-180">30 / 180° &middot; 1/60</option>
+        <option value="40-180">40 / 180° &middot; 1/80</option>
+        <option value="48-180">48 / 180° &middot; 1/96</option>
+        <option value="60-180">60 / 180° &middot; 1/120</option>
+      </optgroup>
+      <optgroup label="360° (slow / max light)">
+        <option value="24-360">24 / 360° &middot; 1/24</option>
+        <option value="25-360">25 / 360° &middot; 1/25</option>
+        <option value="30-360">30 / 360° &middot; 1/30</option>
+      </optgroup>
+      <optgroup label="Slow shutter (extra light)">
+        <option value="24-15">24fps &middot; 1/15</option>
+      </optgroup>
+      <optgroup label="90° (sharp / action)">
+        <option value="24-90">24 / 90° &middot; 1/96</option>
+        <option value="25-90">25 / 90° &middot; 1/100</option>
+        <option value="30-90">30 / 90° &middot; 1/120</option>
+        <option value="60-90">60 / 90° &middot; 1/240</option>
+      </optgroup>
+      <optgroup label="Unusual / creative">
+        <option value="24-172">24 / 172.8° &middot; 1/50</option>
+        <option value="24-270">24 / 270° &middot; 1/32</option>
+        <option value="24-45">24 / 45° &middot; 1/192</option>
+      </optgroup>
+    </select>
+    <select id="shutterSpeed" style="display:none;"></select>
+  </div>
+</div>
+
+<!-- RESULTS: scene analysis + strategy side by side -->
+<div class="results-row">
+  <div class="panel">
+    <div class="panel-title" style="color:var(--yellow);">Scene Analysis</div>
+    <div id="sceneAnalysis"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" style="color:var(--green);">Strategy — Max Data</div>
+    <div id="sceneStrategy"></div>
+  </div>
+</div>
+
+<!-- COLLAPSIBLE REFERENCE TABS -->
+<div class="tabs">
+  <div class="tab-buttons">
+    <button class="tab-btn" data-tab="iso">ISO Table</button>
+    <button class="tab-btn" data-tab="nd">ND Reference</button>
+    <button class="tab-btn" data-tab="cine">Cine / Frame Rates</button>
+    <button class="tab-btn" data-tab="notes">How It Works</button>
+  </div>
+
+  <div class="tab-content" id="tab-iso">
+    <table class="ref">
+      <thead><tr><th>ISO</th><th>HL Stops</th><th>SH Stops</th><th>Use</th></tr></thead>
+      <tbody id="isoTableBody"></tbody>
+    </table>
+    <div class="note">
+      Higher ISO &rarr; brighter image &rarr; less light needed &rarr; protects highlights.<br>
+      Lower ISO &rarr; darker image &rarr; more light on sensor &rarr; protects shadows.
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-nd">
+    <table class="ref">
+      <thead><tr><th>ND</th><th>Stops</th><th>Transmission</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>0.3</td><td>1</td><td>50%</td><td>Slight</td></tr>
+        <tr><td>0.6</td><td>2</td><td>25%</td><td>Overcast</td></tr>
+        <tr><td>0.9</td><td>3</td><td>12.5%</td><td>Bright overcast</td></tr>
+        <tr><td>1.2</td><td>4</td><td>6.25%</td><td>Sunny</td></tr>
+        <tr><td>1.5</td><td>5</td><td>3.1%</td><td>Direct sun</td></tr>
+        <tr><td>1.8</td><td>6</td><td>1.6%</td><td>Bright sun</td></tr>
+        <tr><td>2.1</td><td>7</td><td>0.8%</td><td>Snow / sand</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tab-content" id="tab-cine">
+    <strong>Lightmeter App Cine Setup:</strong><br><br>
+    <table class="ref">
+      <thead><tr><th>FPS / Angle</th><th>Actual Shutter</th><th>Meter Setting</th><th>ASA Comp</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td colspan="5" style="color:var(--yellow);font-weight:600;padding-top:8px;">180&deg; — Standard cine</td></tr>
+        <tr><td>24 / 180°</td><td>1/48</td><td>1/50</td><td>none</td><td>Standard film look</td></tr>
+        <tr><td>25 / 180°</td><td>1/50</td><td>1/50</td><td>none</td><td>PAL standard</td></tr>
+        <tr><td>30 / 180°</td><td>1/60</td><td>1/60</td><td>none</td><td>NTSC / web</td></tr>
+        <tr><td>40 / 180°</td><td>1/80</td><td>1/60</td><td>ASA &minus;1/3</td><td>Slight slow-mo</td></tr>
+        <tr><td>48 / 180°</td><td>1/96</td><td>1/125</td><td>ASA +1/3</td><td>HFR / smooth</td></tr>
+        <tr><td>60 / 180°</td><td>1/120</td><td>1/125</td><td>none</td><td>Slow-mo / sports</td></tr>
+        <tr><td colspan="5" style="color:var(--yellow);font-weight:600;padding-top:8px;">360&deg; — Slow shutter (max light, dreamy motion blur)</td></tr>
+        <tr><td>24 / 360°</td><td>1/24</td><td>1/30</td><td>ASA +1/3</td><td>+1 stop vs 180°, heavy blur</td></tr>
+        <tr><td>25 / 360°</td><td>1/25</td><td>1/30</td><td>ASA +1/3</td><td>+1 stop vs 180°</td></tr>
+        <tr><td>30 / 360°</td><td>1/30</td><td>1/30</td><td>none</td><td>+1 stop vs 180°</td></tr>
+        <tr><td colspan="5" style="color:var(--yellow);font-weight:600;padding-top:8px;">Slow shutter (extra light)</td></tr>
+        <tr><td>24 / 1/15</td><td>1/15</td><td>1/15</td><td>none</td><td>+1.7 stops vs 180°, extreme blur</td></tr>
+        <tr><td colspan="5" style="color:var(--yellow);font-weight:600;padding-top:8px;">90&deg; — Sharp / action (less light)</td></tr>
+        <tr><td>24 / 90°</td><td>1/96</td><td>1/125</td><td>ASA +1/3</td><td>&minus;1 stop vs 180°, crisp</td></tr>
+        <tr><td>25 / 90°</td><td>1/100</td><td>1/125</td><td>ASA +1/3</td><td>&minus;1 stop vs 180°</td></tr>
+        <tr><td>30 / 90°</td><td>1/120</td><td>1/125</td><td>none</td><td>&minus;1 stop vs 180°</td></tr>
+        <tr><td>60 / 90°</td><td>1/240</td><td>1/250</td><td>none</td><td>&minus;1 stop vs 180°</td></tr>
+        <tr><td colspan="5" style="color:var(--yellow);font-weight:600;padding-top:8px;">Unusual / creative</td></tr>
+        <tr><td>24 / 172.8°</td><td>1/50</td><td>1/50</td><td>none</td><td>Exact 1/50 (flicker-safe)</td></tr>
+        <tr><td>24 / 270°</td><td>1/32</td><td>1/30</td><td>none</td><td>+0.6 stop vs 180°, soft</td></tr>
+        <tr><td>24 / 45°</td><td>1/192</td><td>1/250</td><td>ASA +1/3</td><td>&minus;2 stops vs 180°, Saving Private Ryan</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:6px;">
+      Shutter speed = FPS &times; (360 / angle). Slow shutter = more light, more blur. Fast shutter = less light, sharper.<br>
+      If meter speed &gt; actual: meter overestimates light &rarr; ASA down.<br>
+      If meter speed &lt; actual: meter underestimates light &rarr; ASA up.
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-notes">
+    <div id="notesContent"></div>
+    <br><strong>Lightmeter App:</strong> Reads LV (Light Value) at ISO 100. LV = EV at ISO 100 — an absolute brightness scale. Enter readings directly. This tool handles the exposure math for you.
+  </div>
+</div>
+
+<div class="footer" id="footerText"></div>
+
+<script>
+// ============================================================
+// CAMERA / FILM STOCK PROFILES
+// ============================================================
+const PROFILES = {
+  'red_komodo': {
+    name: 'RED Komodo', shortName: 'RED KOMODO',
+    type: 'digital-cinema', defaultMode: 'motion',
+    nativeISO: 800, isoLabel: 'ISO', isoIsMetadata: true,
+    isoData: [
+      { iso: 320,  aboveMid: 4.2, belowMid: 8.3, best: 'shadow' },
+      { iso: 400,  aboveMid: 4.5, belowMid: 8.0, best: 'shadow' },
+      { iso: 500,  aboveMid: 4.8, belowMid: 7.7, best: 'shadow' },
+      { iso: 640,  aboveMid: 5.2, belowMid: 7.3, best: 'shadow' },
+      { iso: 800,  aboveMid: 5.5, belowMid: 7.0, best: 'balanced' },
+      { iso: 1000, aboveMid: 5.8, belowMid: 6.7, best: 'balanced' },
+      { iso: 1250, aboveMid: 6.2, belowMid: 6.3, best: 'highlight' },
+      { iso: 1600, aboveMid: 6.5, belowMid: 6.0, best: 'highlight' },
+      { iso: 2000, aboveMid: 6.8, belowMid: 5.7, best: 'highlight' },
+      { iso: 2500, aboveMid: 7.2, belowMid: 5.3, best: 'highlight' },
+      { iso: 3200, aboveMid: 7.5, belowMid: 5.0, best: 'highlight' },
+    ],
+    notes: '<strong>Core concept:</strong> On RED, ISO is FLUT (metadata). The sensor captures the same data regardless of ISO. What matters is light on sensor = aperture + ND + shutter.<br><br><strong>ISO controls monitoring:</strong> Higher ISO shifts middle gray down &rarr; more highlight headroom on scopes. Lower ISO shifts middle gray up &rarr; more shadow data visible.<br><br><strong>ETTR (Expose To The Right):</strong> Push as much light onto the sensor as possible without clipping important highlights. More light = more shadow data = less noise. Pull exposure down in post.<br><br><strong>Always verify with RED scopes</strong> (false color / histogram). The meter gets you close, scopes confirm.',
+    footer: 'RED Komodo &middot; Native ISO 800 &middot; 12.5 stops DR (SNR=2) &middot; ISO is FLUT',
+    showRedStops: true,
+  },
+  'arri_alexa_mini': {
+    name: 'ARRI Alexa Mini', shortName: 'ALEXA MINI',
+    type: 'digital-cinema', defaultMode: 'motion',
+    nativeISO: 800, isoLabel: 'EI', isoIsMetadata: true,
+    isoData: [
+      { iso: 160,  aboveMid: 5.5, belowMid: 8.0, best: 'shadow' },
+      { iso: 200,  aboveMid: 5.8, belowMid: 7.7, best: 'shadow' },
+      { iso: 400,  aboveMid: 6.8, belowMid: 6.7, best: 'shadow' },
+      { iso: 800,  aboveMid: 8.0, belowMid: 5.5, best: 'balanced' },
+      { iso: 1000, aboveMid: 8.3, belowMid: 5.2, best: 'highlight' },
+      { iso: 1280, aboveMid: 8.7, belowMid: 4.8, best: 'highlight' },
+      { iso: 1600, aboveMid: 9.0, belowMid: 4.5, best: 'highlight' },
+      { iso: 2000, aboveMid: 9.3, belowMid: 4.2, best: 'highlight' },
+      { iso: 2560, aboveMid: 9.7, belowMid: 3.8, best: 'highlight' },
+      { iso: 3200, aboveMid: 10.0,belowMid: 3.5, best: 'highlight' },
+    ],
+    notes: '<strong>Core concept:</strong> On ARRI, EI (Exposure Index) is metadata encoded in LogC. The sensor captures the same data regardless of EI setting.<br><br><strong>EI controls log encoding:</strong> Higher EI shifts mid gray down in LogC &rarr; more highlight headroom. Lower EI shifts mid gray up &rarr; more shadow detail visible.<br><br><strong>LogC workflow:</strong> Expose using false color. Mid gray at ~38% in LogC3. ARRI recommends slight overexposure for cleanest shadows.<br><br><strong>Highlight-biased design:</strong> At native EI 800, the Alexa has ~8 stops above mid gray and ~5.5 below. This is the opposite of RED&rsquo;s shadow bias. ARRI&rsquo;s LogC curve allocates more code values to highlights for smooth rolloff.<br><br><strong>Always verify with ARRI false color</strong> or waveform. The Alexa Mini has 13.5 stops of usable DR.',
+    footer: 'ARRI Alexa Mini &middot; Native EI 800 &middot; 13.5 stops DR &middot; EI is metadata (LogC)',
+    showRedStops: false,
+  },
+  'leica_m11': {
+    name: 'Leica M11', shortName: 'LEICA M11',
+    type: 'digital-stills', defaultMode: 'stills',
+    nativeISO: 64, isoLabel: 'ISO', isoIsMetadata: false,
+    isoData: [
+      { iso: 64,   aboveMid: 8.0, belowMid: 6.5, best: 'balanced' },
+      { iso: 100,  aboveMid: 7.5, belowMid: 6.3, best: 'balanced' },
+      { iso: 200,  aboveMid: 7.0, belowMid: 6.0, best: 'balanced' },
+      { iso: 400,  aboveMid: 6.5, belowMid: 5.5, best: 'balanced' },
+      { iso: 800,  aboveMid: 6.0, belowMid: 5.0, best: 'balanced' },
+      { iso: 1600, aboveMid: 5.5, belowMid: 4.5, best: 'highlight' },
+      { iso: 3200, aboveMid: 5.0, belowMid: 4.0, best: 'highlight' },
+      { iso: 6400, aboveMid: 4.5, belowMid: 3.5, best: 'highlight' },
+    ],
+    notes: '<strong>Core concept:</strong> On the Leica M11, ISO is real analog gain. Higher ISO amplifies the signal AND the noise &mdash; dynamic range shrinks.<br><br><strong>Base ISO 64:</strong> Maximum DR (~14.5 stops). Use the lowest ISO your exposure allows.<br><br><strong>ISO is NOT metadata:</strong> Unlike cinema cameras, changing ISO changes what the sensor captures. Higher ISO = less DR, more noise.<br><br><strong>Shoot RAW (DNG):</strong> Leica DNG gives ~1 stop extra highlight recovery. ETTR is valuable &mdash; push exposure right at base ISO for maximum data.',
+    footer: 'Leica M11 &middot; Base ISO 64 &middot; 14.5 stops DR (base) &middot; ISO is real gain',
+    showRedStops: false,
+  },
+  'kodak_50d': {
+    name: 'Kodak Vision3 50D', shortName: '50D',
+    type: 'film', defaultMode: 'motion', isFilm: true,
+    nativeISO: 50, isoLabel: 'EI', isoIsMetadata: false,
+    isoData: [
+      { iso: 25,  aboveMid: 8.0, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
+      { iso: 50,  aboveMid: 7.5, belowMid: 6.0, best: 'balanced', label: 'Rated' },
+      { iso: 100, aboveMid: 7.0, belowMid: 5.0, best: 'highlight', label: 'Push +1' },
+      { iso: 200, aboveMid: 6.5, belowMid: 4.0, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Kodak Vision3 50D is a fine-grain daylight stock with ~13.5 stops of usable range. Film has a soft highlight shoulder &mdash; overexposure compresses gracefully instead of hard clipping.<br><br><strong>Expose for shadows:</strong> Unlike digital ETTR, film handles overexposure well but underexposure gets thin and grainy. Err on the side of more light.<br><br><strong>Push/Pull processing:</strong> Push +1 doubles effective speed (50&rarr;100) but increases contrast and grain, loses ~1 stop of shadow. Pull -1 halves speed (50&rarr;25) but softens contrast and gains shadow detail.<br><br><strong>Color temp:</strong> 50D is daylight balanced (5500K). Use 85 filter for tungsten or correct in scan/grade.',
+    footer: 'Kodak Vision3 50D (5203) &middot; EI 50 Daylight &middot; ~13.5 stops &middot; Soft highlight shoulder',
+    showRedStops: false,
+  },
+  'kodak_250d': {
+    name: 'Kodak Vision3 250D', shortName: '250D',
+    type: 'film', defaultMode: 'motion', isFilm: true,
+    nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
+    isoData: [
+      { iso: 125, aboveMid: 7.5, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
+      { iso: 250, aboveMid: 7.0, belowMid: 6.0, best: 'balanced', label: 'Rated' },
+      { iso: 500, aboveMid: 6.5, belowMid: 5.0, best: 'highlight', label: 'Push +1' },
+      { iso: 1000,aboveMid: 6.0, belowMid: 4.0, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Kodak Vision3 250D is a versatile daylight stock with ~13 stops of range. More grain than 50D but still fine. Excellent for mixed lighting.<br><br><strong>Expose for shadows:</strong> Film handles overexposure gracefully (soft shoulder). Underexposure gets thin. Give it plenty of light.<br><br><strong>Push/Pull:</strong> Push +1 (rate at 500) adds contrast and grain. Pull -1 (rate at 125) gives softer tones.<br><br><strong>Color temp:</strong> 250D is daylight balanced (5500K).',
+    footer: 'Kodak Vision3 250D (5207) &middot; EI 250 Daylight &middot; ~13 stops &middot; Soft highlight shoulder',
+    showRedStops: false,
+  },
+  'kodak_500t': {
+    name: 'Kodak Vision3 500T', shortName: '500T',
+    type: 'film', defaultMode: 'motion', isFilm: true,
+    nativeISO: 500, isoLabel: 'EI', isoIsMetadata: false,
+    isoData: [
+      { iso: 250, aboveMid: 7.5, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
+      { iso: 500, aboveMid: 7.0, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 1000,aboveMid: 6.5, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+      { iso: 2000,aboveMid: 6.0, belowMid: 3.5, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Kodak Vision3 500T is a fast tungsten stock with ~12.5 stops of range. More grain but great for low light and night work.<br><br><strong>Expose for shadows:</strong> Like all negative film, 500T handles overexposure well. Protect your shadows &mdash; underexposure gets noisy fast on a 500-speed stock.<br><br><strong>Push/Pull:</strong> Push +1 (rate at 1000) is common for night work. Adds grain and contrast. Pull -1 (rate at 250) for softer look.<br><br><strong>Color temp:</strong> 500T is tungsten balanced (3200K). Use 85 filter for daylight or embrace the cool cast.',
+    footer: 'Kodak Vision3 500T (5219) &middot; EI 500 Tungsten &middot; ~12.5 stops &middot; Soft highlight shoulder',
+    showRedStops: false,
+  },
+  'kodak_double_x': {
+    name: 'Kodak Double-X', shortName: 'XX B&W',
+    type: 'film', defaultMode: 'motion', isFilm: true,
+    nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
+    isoData: [
+      { iso: 125, aboveMid: 6.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
+      { iso: 250, aboveMid: 5.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 500, aboveMid: 5.0, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+      { iso: 1000,aboveMid: 4.5, belowMid: 3.5, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Kodak Double-X 5222 is a classic B&W negative stock with ~11 stops of range. Less latitude than color negative but beautiful tonal response.<br><br><strong>Expose generously:</strong> B&W negative handles overexposure reasonably well. Underexposure loses shadow detail quickly. Meter carefully.<br><br><strong>Development matters:</strong> Double-X is very developer-dependent. D-96 (standard) gives moderate contrast. Rodinal pushes grain and contrast. HC-110 is versatile.<br><br><strong>Push/Pull:</strong> Push +1 (500) is very common. Adds grit and contrast (classic war/noir look). Push +2 (1000) is aggressive but usable.',
+    footer: 'Kodak Double-X 5222 (B&W) &middot; EI 250 &middot; ~11 stops &middot; Developer dependent',
+    showRedStops: false,
+  },
+};
+
+// Stills shutter speeds (for Leica and stills mode)
+const stillsShutterSpeeds = [
+  { key: 's-30',    label: '30s',    actual: '30/1' },
+  { key: 's-15',    label: '15s',    actual: '15/1' },
+  { key: 's-8',     label: '8s',     actual: '8/1' },
+  { key: 's-4',     label: '4s',     actual: '4/1' },
+  { key: 's-2',     label: '2s',     actual: '2/1' },
+  { key: 's-1',     label: '1s',     actual: '1/1' },
+  { key: 's-1/2',   label: '1/2',    actual: '1/2' },
+  { key: 's-1/4',   label: '1/4',    actual: '1/4' },
+  { key: 's-1/8',   label: '1/8',    actual: '1/8' },
+  { key: 's-1/15',  label: '1/15',   actual: '1/15' },
+  { key: 's-1/30',  label: '1/30',   actual: '1/30' },
+  { key: 's-1/60',  label: '1/60',   actual: '1/60' },
+  { key: 's-1/125', label: '1/125',  actual: '1/125' },
+  { key: 's-1/250', label: '1/250',  actual: '1/250' },
+  { key: 's-1/500', label: '1/500',  actual: '1/500' },
+  { key: 's-1/1000',label: '1/1000', actual: '1/1000' },
+  { key: 's-1/2000',label: '1/2000', actual: '1/2000' },
+  { key: 's-1/4000',label: '1/4000', actual: '1/4000' },
+  { key: 's-1/8000',label: '1/8000', actual: '1/8000' },
+];
+
+// Active profile state
+let activeProfile = PROFILES['red_komodo'];
+let currentMode = 'motion'; // 'motion' or 'stills'
+
+// ============================================================
+// PROFILE LOADING & MODE SWITCHING
+// ============================================================
+function loadProfile(key) {
+  activeProfile = PROFILES[key];
+  currentMode = activeProfile.defaultMode;
+
+  // Update ISO label
+  document.getElementById('isoLabel').textContent = activeProfile.isoLabel;
+
+  // Rebuild ISO dropdown
+  const isoSel = document.getElementById('camISO');
+  isoSel.innerHTML = '';
+  activeProfile.isoData.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.iso;
+    const lbl = d.label ? `${d.iso} (${d.label})` : String(d.iso);
+    opt.textContent = lbl;
+    isoSel.appendChild(opt);
+  });
+  // Select native ISO, or rated entry, or first entry
+  const defaultEntry = activeProfile.isoData.find(d => d.iso === activeProfile.nativeISO)
+    || activeProfile.isoData.find(d => d.label === 'Rated' || d.best === 'balanced')
+    || activeProfile.isoData[0];
+  isoSel.value = defaultEntry.iso;
+
+  // Update page title and header
+  document.title = `${activeProfile.name} Exposure — Lightmeter App`;
+
+  // Update notes tab
+  document.getElementById('notesContent').innerHTML = activeProfile.notes;
+
+  // Update footer
+  document.getElementById('footerText').innerHTML =
+    activeProfile.footer + ' &middot; Lightmeter App (LV @ ISO 100)';
+
+  // Update tab button labels
+  const isoTabBtn = document.querySelector('[data-tab="iso"]');
+  if (isoTabBtn) isoTabBtn.textContent = activeProfile.isoLabel + ' Table';
+
+  // Rebuild ISO table
+  buildISOTable();
+
+  // Set mode (stills/motion)
+  setMode(currentMode);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  const fpsEl = document.getElementById('fps');
+  const shutterEl = document.getElementById('shutterSpeed');
+  const modeLabel = document.getElementById('shutterModeLabel');
+  const modeToggle = document.getElementById('modeToggle');
+
+  if (mode === 'stills') {
+    fpsEl.style.display = 'none';
+    shutterEl.style.display = 'block';
+    modeLabel.textContent = 'Shutter Speed';
+    modeToggle.textContent = '[S]';
+    modeToggle.title = 'Switch to motion (FPS)';
+    // Populate stills shutter dropdown if empty
+    if (shutterEl.options.length === 0) {
+      stillsShutterSpeeds.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.key;
+        opt.textContent = s.label;
+        if (s.key === 's-1/125') opt.selected = true;
+        shutterEl.appendChild(opt);
+      });
+    }
+  } else {
+    fpsEl.style.display = 'block';
+    shutterEl.style.display = 'none';
+    modeLabel.textContent = 'FPS / Shutter';
+    modeToggle.textContent = '[M]';
+    modeToggle.title = 'Switch to stills (shutter speed)';
+  }
+  analyze();
+}
+
+const fstopStops = { '1':0,'1.4':1,'2':2,'2.8':3,'4':4,'5.6':5,'8':6,'11':7,'16':8,'22':9 };
+
+const fpsShutter = {
+  // 180° standard
+  '24-180':  { actual: '1/48' },
+  '25-180':  { actual: '1/50' },
+  '30-180':  { actual: '1/60' },
+  '40-180':  { actual: '1/80' },
+  '48-180':  { actual: '1/96' },
+  '60-180':  { actual: '1/120' },
+  // 360° slow shutter
+  '24-360':  { actual: '1/24' },
+  '25-360':  { actual: '1/25' },
+  '30-360':  { actual: '1/30' },
+  // Slow shutter
+  '24-15':   { actual: '1/15' },
+  // 90° sharp
+  '24-90':   { actual: '1/96' },
+  '25-90':   { actual: '1/100' },
+  '30-90':   { actual: '1/120' },
+  '60-90':   { actual: '1/240' },
+  // Unusual
+  '24-172':  { actual: '1/50' },
+  '24-270':  { actual: '1/32' },
+  '24-45':   { actual: '1/192' },
+};
+
+
+function analyze() {
+  try {
+  const evHL = parseFloat(document.getElementById('evHL').value) || 0;
+  const evSubj = parseFloat(document.getElementById('evSubj').value) || 0;
+  const evSH = parseFloat(document.getElementById('evSH').value) || 0;
+  const meterASA = parseInt(document.getElementById('meterASA').value);
+  const p = activeProfile;
+  const isoData = p.isoData;
+
+  const subjToHL = evHL - evSubj;
+  const subjToSH = evSubj - evSH;
+  const sceneContrast = evHL - evSH;
+
+  // Get user-selected ISO
+  const selectedISO = parseInt(document.getElementById('camISO').value);
+  const optISO = isoData.find(d => d.iso === selectedISO) || isoData.find(d => d.best === 'balanced') || isoData[0];
+
+  const hlRoom = optISO.aboveMid;
+  const shRoom = optISO.belowMid;
+
+  // Shutter speed: from motion (FPS) or stills mode
+  let shutterActual;
+  if (currentMode === 'stills') {
+    const ssKey = document.getElementById('shutterSpeed').value;
+    const ssEntry = stillsShutterSpeeds.find(s => s.key === ssKey);
+    shutterActual = ssEntry ? ssEntry.actual : '1/125';
+  } else {
+    const fps = document.getElementById('fps').value;
+    const shutterInfo = fpsShutter[fps];
+    shutterActual = shutterInfo ? shutterInfo.actual : '1/48';
+  }
+
+  // Parse shutter to Tv (handles both "1/48" and "30/1" formats)
+  const shutterParts = shutterActual.split('/');
+  const shutterNum = parseFloat(shutterParts[0]);
+  const shutterDen = parseFloat(shutterParts[1]);
+  const shutterSeconds = shutterNum / shutterDen;
+  const Tv = Math.log2(1 / shutterSeconds);
+
+  // Working ISO: for digital-cinema (metadata), use native ISO
+  // For digital-stills and film, use selected ISO (real gain / rated speed)
+  const workingISO = p.isoIsMetadata ? p.nativeISO : selectedISO;
+  const Av_subj = evSubj - Tv + Math.log2(workingISO / meterASA);
+  const meteredFstop = Math.pow(2, Av_subj / 2);
+  const meteredFstopRounded = closestFstop(meteredFstop);
+  const meteredStops = Math.log2(meteredFstop); // in stops from f/1
+
+  // Full manual: read user-set aperture and ND directly
+  const aperture = document.getElementById('camAperture').value;
+  const ndVal = parseInt(document.getElementById('camND').value);
+
+  const Av_camera = 2 * Math.log2(parseFloat(aperture)) + ndVal;
+
+  // Exposure delta: how far off from correct exposure for the subject
+  const exposureDelta = Av_camera - Av_subj;
+
+  // Sensor/film window calculation — depends on exposure model
+  let nativeMidGrayEV, blackClipEV, whiteClipEV, TOTAL_DR;
+
+  if (p.isoIsMetadata) {
+    // DIGITAL-CINEMA (RED, ARRI): fixed physical window at native ISO
+    nativeMidGrayEV = evSubj + (Av_camera - Av_subj);
+    const nativeEntry = isoData.find(d => d.iso === p.nativeISO) || isoData[0];
+    blackClipEV = nativeMidGrayEV - nativeEntry.belowMid;
+    whiteClipEV = nativeMidGrayEV + nativeEntry.aboveMid;
+    TOTAL_DR = nativeEntry.aboveMid + nativeEntry.belowMid;
+  } else {
+    // DIGITAL-STILLS (Leica) / FILM: window depends on selected ISO
+    const midGrayEV = evSubj + (Av_camera - Av_subj);
+    nativeMidGrayEV = midGrayEV;
+    blackClipEV = midGrayEV - optISO.belowMid;
+    whiteClipEV = midGrayEV + optISO.aboveMid;
+    TOTAL_DR = optISO.aboveMid + optISO.belowMid;
+  }
+
+  // Margins: how far scene readings are from physical clip points
+  const hlMarginReal = whiteClipEV - evHL;
+  const shMarginReal = evSH - blackClipEV;
+
+  // Format values
+  const ndStr = ndVal > 0 ? `ND ${(ndVal * 0.3).toFixed(1)} (${ndVal} stop${ndVal > 1 ? 's' : ''})` : 'no ND';
+
+  // Scene analysis panel
+  const hlStatus = hlMarginReal >= 2 ? `<span class="vg">SAFE +${hlMarginReal.toFixed(1)}</span>` :
+                   hlMarginReal >= 0 ? `<span class="vy">TIGHT +${hlMarginReal.toFixed(1)}</span>` :
+                   `<span class="vr">CLIP ${hlMarginReal.toFixed(1)}</span>`;
+  const shStatus = shMarginReal >= 2 ? `<span class="vg">SAFE +${shMarginReal.toFixed(1)}</span>` :
+                   shMarginReal >= 0 ? `<span class="vy">TIGHT +${shMarginReal.toFixed(1)}</span>` :
+                   `<span class="vr">CRUSH ${shMarginReal.toFixed(1)}</span>`;
+
+  document.getElementById('sceneAnalysis').innerHTML = `
+    Contrast: <span class="vr">${sceneContrast.toFixed(1)} stops</span><br>
+    Face &rarr; HL: <span class="vy">${subjToHL.toFixed(1)}</span> stops above<br>
+    Face &rarr; SH: <span class="vb">${subjToSH.toFixed(1)}</span> stops below<br>
+    <div class="sep"></div>
+    <span style="font-size:0.9em;color:var(--muted);">${p.isFilm ? 'Film' : 'Sensor'} window: EV ${blackClipEV.toFixed(1)} — ${whiteClipEV.toFixed(1)} (${TOTAL_DR.toFixed(1)} stops)</span><br>
+    Highlight: ${hlStatus}<br>
+    Shadow: ${shStatus}<br>
+    ${sceneContrast <= TOTAL_DR ? `<span class="vg">Scene fits in ${p.isFilm ? 'film latitude' : 'sensor'}</span>` : `<span class="vr">Exceeds ${p.isFilm ? 'film latitude' : 'sensor DR'}</span>`}
+  `;
+
+  // --- STRATEGY ENGINE ---
+  // Derived values for scenario detection
+  const faceToHL = evHL - evSubj;          // stops from face to highlight
+  const faceToSH = evSubj - evSH;          // stops from face to shadow
+  const faceToWhiteClip = whiteClipEV - evSubj;  // face headroom to white clip
+  const faceToBlackClip = evSubj - blackClipEV;  // face headroom to black clip
+  const drRatio = sceneContrast / TOTAL_DR;       // how much of sensor DR scene uses
+  const hlBright = evHL >= 14;             // bright highlights (sky, sun, clouds)
+  const backlit = faceToHL >= 4;           // face much darker than highlights
+  const flatScene = sceneContrast <= 4;    // very flat/overcast
+  const lowContrast = sceneContrast <= 6;
+  const midContrast = sceneContrast > 6 && sceneContrast <= 10;
+  const highContrast = sceneContrast > 10;
+  const exceedsSensor = sceneContrast > TOTAL_DR;
+  // Where does the contrast challenge lie relative to face?
+  const shadowWeight = sceneContrast > 0 ? faceToSH / sceneContrast : 0.5;
+  const shadowHeavy = shadowWeight > 0.6;  // most DR needed below face
+  const hlHeavy = shadowWeight < 0.4;      // most DR needed above face
+  const dimScene = evHL <= 10;             // night / deep indoor
+  const brightScene = evSubj >= 13;        // bright daylight on face
+  const suggestedND = Math.max(0, Math.round(Av_subj - 2 * Math.log2(parseFloat(aperture))));
+
+  let stratHTML = '';
+  let tips = [];
+
+  // === 1. EXPOSURE DELTA ===
+  if (Math.abs(exposureDelta) > 0.3) {
+    const absD = Math.abs(exposureDelta).toFixed(1);
+    if (exposureDelta > 0) {
+      stratHTML += `<span class="vy">UNDEREXPOSED by ${absD} stops</span><br>`;
+      if (exposureDelta > 2) {
+        stratHTML += `<span style="font-size:0.85em;color:var(--muted);">Face will be noticeably dark. Open up or reduce ND.</span><br>`;
+      } else {
+        stratHTML += `<span style="font-size:0.85em;color:var(--muted);">Face slightly dark — may be intentional for mood.</span><br>`;
+      }
+      stratHTML += `<span style="font-size:0.85em;color:var(--dim);">Suggested: f/${aperture} + ND ${suggestedND} for correct face exposure</span><br><div class="sep"></div>`;
+    } else {
+      stratHTML += `<span class="vy">OVEREXPOSED by ${absD} stops</span><br>`;
+      if (Math.abs(exposureDelta) > 2) {
+        stratHTML += `<span style="font-size:0.85em;color:var(--muted);">Face will be hot. Add ND or stop down.</span><br>`;
+      } else {
+        stratHTML += `<span style="font-size:0.85em;color:var(--muted);">Slight overexposure — can be ETTR if highlight headroom allows.</span><br>`;
+      }
+      stratHTML += `<span style="font-size:0.85em;color:var(--dim);">Suggested: f/${aperture} + ND ${suggestedND} for correct face exposure</span><br><div class="sep"></div>`;
+    }
+  } else {
+    stratHTML += `<span class="vg">EXPOSURE CORRECT</span> <span style="font-size:0.85em;color:var(--dim);">(&Delta; ${exposureDelta > 0 ? '+' : ''}${exposureDelta.toFixed(1)})</span><br><div class="sep"></div>`;
+  }
+
+  // === 2. HIGHLIGHT ANALYSIS ===
+  if (hlMarginReal < 0) {
+    const clipAmt = Math.abs(hlMarginReal).toFixed(1);
+    stratHTML += `<span class="vr">HIGHLIGHTS CLIP by ${clipAmt} stops</span><br>`;
+    if (backlit && hlMarginReal < -3) {
+      tips.push('Backlit scene — sky/BG will blow out hard. Often acceptable for interviews & close-ups.');
+      tips.push(`To save HL: stop down ${clipAmt} (face goes ${clipAmt} stops darker) or add ${clipAmt} stops of fill to face.`);
+    } else if (backlit) {
+      tips.push('Backlit — BG clipping. Consider letting it go or adding fill/bounce to face.');
+      tips.push(`Stopping down ${clipAmt} saves HL but darkens face.`);
+    } else {
+      tips.push(`HL ${clipAmt} stops over white clip. Stop down or add ND to protect.`);
+      if (parseFloat(clipAmt) <= 1.5) tips.push('Close — minor ND or aperture adjustment fixes this.');
+    }
+  } else if (hlMarginReal <= 1) {
+    stratHTML += `<span class="vy">HIGHLIGHTS TIGHT — ${hlMarginReal.toFixed(1)} stops to clip</span><br>`;
+    tips.push('Almost no headroom. Any exposure push risks clipping. Lock this in or stop down slightly.');
+  } else if (hlMarginReal > 3) {
+    stratHTML += `<span class="vg">HIGHLIGHT HEADROOM +${hlMarginReal.toFixed(1)} stops</span><br>`;
+    tips.push(`${hlMarginReal.toFixed(1)} stops of unused headroom above highlights.`);
+  }
+
+  // === 3. SHADOW ANALYSIS ===
+  if (shMarginReal < 0) {
+    const crushAmt = Math.abs(shMarginReal).toFixed(1);
+    stratHTML += `<span class="vr">SHADOWS CRUSH by ${crushAmt} stops</span><br>`;
+    if (exceedsSensor) {
+      tips.push(`Scene exceeds sensor DR. ${crushAmt} stops of shadow lost — unavoidable without lighting.`);
+    } else {
+      tips.push(`Shadows ${crushAmt} stops below black clip. Open up exposure or add fill to shadows.`);
+    }
+  } else if (shMarginReal <= 1) {
+    stratHTML += `<span class="vy">SHADOWS TIGHT — ${shMarginReal.toFixed(1)} stops to crush</span><br>`;
+    tips.push('Shadow detail at the edge. Any underexposure loses them.');
+  }
+
+  // === 4. SCENE-SPECIFIC ADVICE ===
+  if (exceedsSensor) {
+    stratHTML += `<span class="vr">SCENE EXCEEDS SENSOR by ${(sceneContrast - TOTAL_DR).toFixed(1)} stops</span><br>`;
+    tips.push('Cannot capture full scene. Choose your sacrifice:');
+    if (backlit) {
+      tips.push('&rarr; Expose for face, let sky/BG clip (common for interviews, narrative close-ups).');
+      tips.push('&rarr; Or expose for BG, add strong key light to face (commercial/cinematic look).');
+    } else {
+      tips.push('&rarr; Protect highlights (raise ISO) — shadows go noisy/crushed.');
+      tips.push('&rarr; Protect shadows (lower ISO) — highlights blow out.');
+      tips.push('&rarr; Split the difference at ISO 800 and accept both ends are compromised.');
+    }
+  } else if (flatScene) {
+    tips.push('Very flat scene — perfect for ETTR. Push exposure as far right as possible for maximum sensor data. Pull down in post.');
+    tips.push('Low ISO (320) ideal — all shadow detail clean, no highlight risk.');
+  } else if (lowContrast && hlMarginReal > 2) {
+    tips.push('Low contrast with headroom — great ETTR candidate. Open up to push highlights closer to white clip for cleanest possible image.');
+  } else if (midContrast && !backlit) {
+    if (hlMarginReal > 2 && shMarginReal > 2) {
+      tips.push('Comfortable fit. Scene sits well within sensor range. Standard ISO 800 works.');
+      tips.push('Could ETTR slightly for cleaner shadows if highlight headroom allows.');
+    } else {
+      tips.push('Medium contrast — fits but placement matters. Watch the tighter end.');
+    }
+  } else if (highContrast && !exceedsSensor) {
+    tips.push('High contrast but within sensor range. Careful placement critical — little room for error.');
+    if (backlit) {
+      tips.push('Backlit: expose for face, check if HL margin holds. If not, decide what to sacrifice.');
+    }
+  }
+
+  // === 5. FACE PLACEMENT ===
+  if (faceToWhiteClip <= 2 && faceToWhiteClip > 0) {
+    tips.push('&bull; Face is close to white clip — skin tones may look washed. Consider stopping down.');
+  } else if (faceToWhiteClip <= 0) {
+    tips.push('&bull; <b>Face is above white clip</b> — skin will be blown out. Must stop down or add ND.');
+  }
+  if (faceToBlackClip <= 2 && faceToBlackClip > 0) {
+    tips.push('&bull; Face is near black clip — skin tones will be noisy/muddy. Add light to face or open up.');
+  } else if (faceToBlackClip <= 0) {
+    tips.push('&bull; <b>Face is below black clip</b> — completely lost. Open up significantly or add key light.');
+  }
+
+  // Render tips
+  if (tips.length > 0) {
+    stratHTML += `<div style="font-size:0.85em;color:var(--muted);margin-top:4px;">`;
+    tips.forEach(t => { stratHTML += `${t}<br>`; });
+    stratHTML += `</div><div class="sep"></div>`;
+  }
+
+  // === 6. SET CAMERA ===
+  stratHTML += `
+    <span class="v">SET ${p.isFilm ? 'EXPOSURE' : 'CAMERA'}:</span><br>
+    Aperture: <span class="v">f/${aperture}</span> &middot; ${ndStr}<br>
+    ${p.isoLabel}: <span class="vr">${optISO.iso}${optISO.label ? ' ('+optISO.label+')' : ''}</span> &middot; Shutter: ${shutterActual}<br>
+    <div class="sep"></div>
+    <span style="font-size:0.85em;color:var(--muted);">
+      Meter reads face: ~f/${meteredFstopRounded}
+      ${suggestedND !== ndVal ? ' &middot; suggested ND ' + suggestedND + ' for correct exposure' : ''}
+    </span>
+  `;
+
+  // === 7. ISO / EI STRATEGY SUGGESTION ===
+  // Helper: pick closest available ISO from active profile
+  const loISO = isoData[0].iso;
+  const hiISO = isoData[isoData.length - 1].iso;
+  const midISO = p.nativeISO;
+  const nearISO = (target) => isoData.reduce((best, d) =>
+    Math.abs(d.iso - target) < Math.abs(best.iso - target) ? d : best, isoData[0]);
+  // Position helpers: 'low' = first quarter, 'mid' = middle, 'high' = last quarter
+  const lowIdx = Math.max(0, Math.floor(isoData.length * 0.25));
+  const highIdx = Math.min(isoData.length - 1, Math.floor(isoData.length * 0.75));
+  const loEntry = isoData[0];
+  const midEntry = isoData.find(d => d.iso === midISO) || isoData[Math.floor(isoData.length / 2)];
+  const hiEntry = isoData[isoData.length - 1];
+  const loMidEntry = isoData[lowIdx];
+  const hiMidEntry = isoData[highIdx];
+
+  let stratISO, stratLabel, stratColor, stratNote;
+  const isoLbl = p.isoLabel;
+  const isFilm = !!p.isFilm;
+  const nativeWord = isFilm ? 'Rated' : (p.isoIsMetadata ? 'Native' : 'Base');
+
+  if (isFilm) {
+    // === FILM STRATEGY: simpler — rated speed, push/pull advice ===
+    const ratedEntry = isoData.find(d => d.label === 'Rated') || isoData[0];
+    if (exceedsSensor) {
+      stratISO = ratedEntry.iso; stratColor = 'vr'; stratLabel = 'Exceeds Film Latitude';
+      stratNote = `Scene exceeds ${TOTAL_DR.toFixed(1)} stops of film range. Expose for face/shadows — film shoulder handles highlight overflow gracefully. Consider fill or flag to manage contrast.`;
+    } else if (flatScene || (lowContrast && !hlBright)) {
+      stratISO = ratedEntry.iso; stratColor = 'vb'; stratLabel = 'Overexpose Slightly';
+      stratNote = 'Low contrast — film loves extra light. Rate 1/3 to 1 stop over for richer negatives. More shadow detail, smoother grain.';
+    } else if (dimScene && shadowHeavy) {
+      const pushEntry = isoData.find(d => d.label === 'Push +1');
+      stratISO = pushEntry ? pushEntry.iso : ratedEntry.iso; stratColor = 'vy';
+      stratLabel = pushEntry ? 'Push +1 — Low Light' : 'Rated — Low Light';
+      stratNote = pushEntry ? `Dark scene with deep shadows. Push +1 (rate at ${pushEntry.iso}) for extra speed. More contrast & grain. Tell the lab.` : 'Dark scene. Expose generously for shadow detail.';
+    } else if (dimScene) {
+      stratISO = ratedEntry.iso; stratColor = 'vb'; stratLabel = 'Rated — Dark Scene';
+      stratNote = 'Dim scene. Expose generously at rated speed. Film handles overexposure well — protect shadows.';
+    } else if (backlit) {
+      stratISO = ratedEntry.iso; stratColor = 'vy'; stratLabel = 'Rated — Backlit';
+      stratNote = 'Backlit scene. Expose for the face — film shoulder will compress hot highlights gracefully. Much more forgiving than digital.';
+    } else if (highContrast) {
+      stratISO = ratedEntry.iso; stratColor = 'vg'; stratLabel = 'Rated — High Contrast';
+      stratNote = 'High contrast but within film latitude. Expose for shadows/face — let highlights ride into the shoulder. Film compresses, not clips.';
+    } else {
+      stratISO = ratedEntry.iso; stratColor = 'vg'; stratLabel = `Rated — ${isoLbl} ${ratedEntry.iso}`;
+      stratNote = `Standard scene at rated speed. Expose accurately or slightly over for richer negatives.`;
+    }
+  } else {
+    // === DIGITAL STRATEGY ===
+    if (exceedsSensor && backlit) {
+      stratISO = hiEntry.iso; stratColor = 'vr'; stratLabel = 'Backlit — Protect Sky';
+      stratNote = `Backlit scene exceeds DR. High ${isoLbl} protects sky/BG highlights. Face needs fill light or accept dark.`;
+    } else if (exceedsSensor && shadowHeavy) {
+      stratISO = loMidEntry.iso; stratColor = 'vr'; stratLabel = 'Exceeds — Protect Shadows';
+      stratNote = `Most contrast (${(shadowWeight*100).toFixed(0)}%) is below face. Low ${isoLbl} for max shadow detail. Highlights will clip.`;
+    } else if (exceedsSensor && hlHeavy) {
+      stratISO = hiEntry.iso; stratColor = 'vr'; stratLabel = 'Exceeds — Protect Highlights';
+      stratNote = `Most contrast (${((1-shadowWeight)*100).toFixed(0)}%) is above face. High ${isoLbl} to save highlights. Shadows will crush.`;
+    } else if (exceedsSensor) {
+      stratISO = hiMidEntry.iso; stratColor = 'vr'; stratLabel = 'Exceeds — Split Compromise';
+      stratNote = `Scene exceeds ${p.isFilm ? 'film latitude' : 'sensor DR'}, contrast balanced around face. Compromise ${isoLbl} — both ends will suffer.`;
+
+    } else if (flatScene) {
+      stratISO = loEntry.iso; stratColor = 'vb'; stratLabel = 'ETTR — Max Data';
+      stratNote = `Flat scene, tons of headroom. Lowest ${isoLbl}, push exposure right for maximum data. Grade freely in post.`;
+
+    } else if (dimScene && shadowHeavy) {
+      stratISO = loEntry.iso; stratColor = 'vb'; stratLabel = 'Protect Shadows — Dark Scene';
+      stratNote = `Low light with deep shadows. No highlight risk. Lowest ${isoLbl} for cleanest shadow detail.`;
+    } else if (dimScene && hlHeavy) {
+      stratISO = hiMidEntry.iso; stratColor = 'vy'; stratLabel = 'Highlight Aware — Dark Scene';
+      stratNote = `Dim scene but highlights dominate contrast. Raise ${isoLbl} to protect bright elements.`;
+    } else if (dimScene) {
+      stratISO = loMidEntry.iso; stratColor = 'vb'; stratLabel = 'Shadow Priority — Night/Indoor';
+      stratNote = `Dim scene, balanced contrast. Lean low ${isoLbl} for cleaner shadows — highlights are tame.`;
+
+    } else if (lowContrast && !hlBright) {
+      stratISO = loEntry.iso; stratColor = 'vb'; stratLabel = 'ETTR — Low Contrast';
+      stratNote = `Low contrast, no bright highlights. Flood the sensor at low ${isoLbl} for maximum post latitude.`;
+    } else if (lowContrast && hlBright) {
+      stratISO = loMidEntry.iso; stratColor = 'vg'; stratLabel = 'ETTR — Watch Highlights';
+      stratNote = `Low contrast but bright highlights present. ETTR with caution — keep an eye on HL headroom.`;
+
+    } else if (backlit && !exceedsSensor) {
+      stratISO = hiMidEntry.iso; stratColor = 'vy'; stratLabel = 'Backlit — Protect BG';
+      stratNote = `Backlit scene fits in sensor. Raise ${isoLbl} to protect BG highlights. Face gets more shadow room.`;
+
+    } else if (shadowHeavy && !hlBright && midContrast) {
+      stratISO = loMidEntry.iso; stratColor = 'vb'; stratLabel = 'Shadow Priority';
+      stratNote = `${(shadowWeight*100).toFixed(0)}% of contrast below face. Low ${isoLbl} for shadow detail — highlights safe.`;
+    } else if (shadowHeavy && !hlBright && highContrast) {
+      stratISO = loMidEntry.iso; stratColor = 'vb'; stratLabel = 'Shadow Priority — High Contrast';
+      stratNote = `Deep shadows dominate. Low ${isoLbl} maximizes shadow detail. Highlights not at risk.`;
+    } else if (shadowHeavy && hlBright) {
+      stratISO = midEntry.iso; stratColor = 'vg'; stratLabel = `${nativeWord} — Deep Shadows + Bright HL`;
+      stratNote = `Deep shadows AND bright highlights. ${nativeWord} ${isoLbl} ${midEntry.iso} balances both — watch both clip edges.`;
+
+    } else if (hlHeavy && hlBright) {
+      stratISO = hiEntry.iso; stratColor = 'vy'; stratLabel = 'Protect Highlights';
+      stratNote = `Bright highlights dominate the contrast range. High ${isoLbl} shifts headroom to protect sky/clouds/sun.`;
+    } else if (hlHeavy && !hlBright) {
+      stratISO = hiMidEntry.iso; stratColor = 'vy'; stratLabel = 'Highlight Aware';
+      stratNote = `Most contrast above face. Shift headroom toward highlights. Shadows are shallow and clean.`;
+
+    } else if (brightScene && midContrast) {
+      stratISO = midEntry.iso; stratColor = 'vg'; stratLabel = `${nativeWord} — Bright Outdoor`;
+      stratNote = `Bright daylight, moderate contrast. ${nativeWord} ${isoLbl} with standard exposure. Straightforward.`;
+    } else if (brightScene && highContrast) {
+      stratISO = hiMidEntry.iso; stratColor = 'vy'; stratLabel = 'Highlight Aware — Bright Outdoor';
+      stratNote = `Bright outdoor, high contrast. Lean toward HL protection — sun creates hard shadows.`;
+
+    } else if (midContrast) {
+      stratISO = midEntry.iso; stratColor = 'vg'; stratLabel = `${nativeWord} — Balanced`;
+      stratNote = `Balanced contrast around face. ${nativeWord} ${isoLbl} ${midEntry.iso} gives even headroom both ways.`;
+    } else if (highContrast) {
+      stratISO = midEntry.iso; stratColor = 'vg'; stratLabel = `${nativeWord} — High Contrast`;
+      stratNote = `High contrast, balanced around face. ${nativeWord} ${isoLbl}, careful placement. Little room for error.`;
+    } else {
+      stratISO = midEntry.iso; stratColor = 'vg'; stratLabel = `${nativeWord} — Standard`;
+      stratNote = `Standard scene. ${isoLbl} ${midEntry.iso} gives balanced headroom.`;
+    }
+  }
+
+  const suggestedISO = isoData.find(d => d.iso === stratISO) || isoData[0];
+
+  stratHTML += `
+    <div class="sep"></div>
+    <span style="font-size:0.7em;text-transform:uppercase;color:var(--muted);letter-spacing:0.5px;">Suggested ${isoLbl} Strategy</span><br>
+    <span class="${stratColor}">${stratLabel} — ${isoLbl} ${stratISO}${suggestedISO.label ? ' ('+suggestedISO.label+')' : ''}</span><br>
+    <span style="font-size:0.82em;color:var(--muted);">${stratNote}</span><br>
+    <span style="font-size:0.78em;color:var(--dim);">
+      @ ${isoLbl} ${stratISO}: ${suggestedISO.aboveMid} HL / ${suggestedISO.belowMid} SH stops
+      &middot; <i>creative choice — adjust to taste</i>
+    </span>
+  `;
+
+  document.getElementById('sceneStrategy').innerHTML = stratHTML;
+
+  // DR bar: EV is the master scale (-5 to 20)
+  // Sensor window = PHYSICAL capture range (computed above from camera settings)
+  // ISO only shifts where mid gray sits WITHIN the fixed window
+  const bar = document.getElementById('drBar');
+  const EV_MIN = -5, EV_MAX = 20, EV_RANGE = EV_MAX - EV_MIN;
+
+  // Where mid gray actually sits at selected ISO
+  // For metadata cameras: shifts within fixed window. For others: same as window mid.
+  const actualMidGrayEV = p.isoIsMetadata ? (blackClipEV + shRoom) : nativeMidGrayEV;
+  const skinEV = evSubj + 1;
+
+  function evToPct(ev) { return ((ev - EV_MIN) / EV_RANGE) * 100; }
+
+  // Map EV to internal stop number (linear across capture window)
+  function evToStop(ev) { return 1 + (ev - blackClipEV) / TOTAL_DR * 15; }
+
+  // Sensor/film window band
+  const winL = Math.max(0, evToPct(blackClipEV));
+  const winR = Math.min(100, evToPct(whiteClipEV));
+  const winW = winR - winL;
+  const midInWin = winW > 0 ? ((evToPct(actualMidGrayEV) - winL) / winW * 100) : 50;
+  const winGrad = p.isFilm
+    ? `linear-gradient(90deg, #1a0a0a 0%, #3a2a1a 15%, #665533 ${midInWin*0.85}%, #887744 ${midInWin}%, #aa9955 ${midInWin*1.1}%, #ccbb77 ${midInWin*1.25}%, #eedd99 88%, #ffe 100%)`
+    : `linear-gradient(90deg, #0a0a20 0%, #1a1a3a 18%, #444 ${midInWin*0.85}%, #888 ${midInWin}%, #cc9 ${midInWin*1.1}%, #eec ${midInWin*1.25}%, #ffe 88%, #fff 100%)`;
+  const sensorWin = `<div style="position:absolute;left:${winL}%;top:0;width:${winW}%;height:100%;
+    background:${winGrad};border-radius:4px;z-index:1;"></div>`;
+
+  // Clip/limit edges
+  const clipColor = p.isFilm ? '#c97' : 'var(--red)';
+  const bEdge = `<div style="position:absolute;left:${winL}%;top:0;height:100%;width:2px;background:${clipColor};z-index:4;"></div>`;
+  const wEdge = `<div style="position:absolute;left:${winR}%;top:0;height:100%;width:2px;background:${clipColor};z-index:4;transform:translateX(-2px);"></div>`;
+
+  // Stop markers for metadata cameras
+  const midStop = evToStop(actualMidGrayEV);
+  const skinStop = evToStop(actualMidGrayEV + 1);
+
+  function marker(ev, label, color, pos) {
+    const pct = evToPct(ev);
+    const clamped = Math.max(0.5, Math.min(99.5, pct));
+    const out = ev < blackClipEV || ev > whiteClipEV;
+    const outStyle = out ? 'opacity:0.4;' : '';
+    return `<div style="position:absolute;left:${clamped}%;top:0;height:100%;display:flex;flex-direction:column;align-items:center;transform:translateX(-50%);z-index:6;${outStyle}">
+      <div style="font-size:0.55em;color:${color};font-weight:700;white-space:nowrap;background:rgba(0,0,0,0.85);padding:1px 5px;border-radius:3px;margin-top:${pos==='top'?'1px':'auto'}">${label}</div>
+      ${pos==='top'?'<div style="flex:1;width:2px;background:'+color+'"></div>':''}
+      ${pos==='bot'?'<div style="flex:1;width:2px;background:'+color+'"></div>':''}
+      <div style="font-size:0.5em;color:${color};background:rgba(0,0,0,0.85);padding:1px 4px;border-radius:3px;margin-bottom:${pos==='bot'?'1px':'auto'}">EV ${ev}</div>
+    </div>`;
+  }
+
+  // DR label
+  const drLbl = `<div style="position:absolute;left:${winL+winW/2}%;top:50%;transform:translate(-50%,-50%);
+    font-size:0.55em;color:rgba(255,255,255,0.35);font-weight:600;z-index:2;white-space:nowrap;">
+    ${TOTAL_DR.toFixed(1)} stops</div>`;
+
+  const bLabel = p.isFilm ? 'TOE' : 'BLACK';
+  const wLabel = p.isFilm ? 'SHOULDER' : 'WHITE';
+
+  bar.innerHTML = sensorWin + bEdge + wEdge + drLbl +
+    marker(blackClipEV, bLabel, clipColor, 'bot') +
+    marker(whiteClipEV, wLabel, clipColor, 'bot') +
+    marker(evSubj, 'FACE', 'var(--green)', 'top') +
+    marker(evHL, 'HL', '#f1c40f', 'top') +
+    marker(evSH, 'SH', '#3498db', 'bot');
+
+  // Reference ticks below the bar
+  const redRef = document.getElementById('drRedRef');
+  let redHTML = '';
+
+  if (p.showRedStops) {
+    // RED Komodo: 1-16 RED stop reference scale
+    for (let i = 1; i <= 16; i++) {
+      const redEV = blackClipEV + (i - 1) * (TOTAL_DR / 15);
+      const pct = evToPct(redEV);
+      if (pct >= 0 && pct <= 100) {
+        redHTML += `<span style="position:absolute;left:${pct}%;transform:translateX(-50%);top:0;">${i}</span>`;
+      }
+    }
+    // MID and SKIN target markers on RED scale
+    const midRedPct = evToPct(blackClipEV + (midStop - 1) * (TOTAL_DR / 15));
+    const skinRedPct = evToPct(blackClipEV + (skinStop - 1) * (TOTAL_DR / 15));
+    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,midRedPct))}%;">
+      <div class="tri tri-up" style="border-bottom-color:#2ecc71;"></div>
+      <div class="lbl" style="color:#2ecc71;">MID ${midStop.toFixed(1)}</div>
+    </div>`;
+    redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,skinRedPct))}%;">
+      <div class="tri tri-up" style="border-bottom-color:#e8a87c;"></div>
+      <div class="lbl" style="color:#e8a87c;">SKIN ${skinStop.toFixed(1)}</div>
+    </div>`;
+  } else {
+    // Generic: show MID marker only
+    const midPct = evToPct(actualMidGrayEV);
+    if (midPct >= 0 && midPct <= 100) {
+      redHTML += `<div class="dr-target" style="left:${Math.max(1,Math.min(99,midPct))}%;">
+        <div class="tri tri-up" style="border-bottom-color:#2ecc71;"></div>
+        <div class="lbl" style="color:#2ecc71;">MID (${p.isoLabel} ${selectedISO})</div>
+      </div>`;
+    }
+  }
+
+  redRef.innerHTML = redHTML;
+  } catch(e) {
+    var errDiv = document.getElementById('sceneAnalysis');
+    if (errDiv) errDiv.innerHTML = '<span style="color:red">Error: ' + e.message + '</span>';
+  }
+}
+
+function closestFstop(n) {
+  const stops = [1, 1.4, 2, 2.8, 4, 5.6, 8, 11, 16, 22, 32, 45];
+  let best = stops[0];
+  for (const s of stops) { if (Math.abs(s - n) < Math.abs(best - n)) best = s; }
+  return best;
+}
+
+// ISO table — rebuilt on profile change
+function buildISOTable() {
+  const tbody = document.getElementById('isoTableBody');
+  tbody.innerHTML = '';
+  const p = activeProfile;
+  const labels = { shadow: 'Shadows', highlight: 'Highlights', balanced: 'Balanced' };
+  const badges = { shadow: 'badge-sh', highlight: 'badge-hl', balanced: 'badge-bal' };
+  const nativeWord = p.isFilm ? 'RATED' : (p.isoIsMetadata ? 'NATIVE' : 'BASE');
+  p.isoData.forEach(d => {
+    const isNative = d.iso === p.nativeISO;
+    const isoText = d.label ? `${d.iso} (${d.label})` : String(d.iso);
+    const dr = (d.aboveMid + d.belowMid).toFixed(1);
+    tbody.innerHTML += `<tr class="${isNative ? 'native' : ''}">
+      <td>${isoText}${isNative ? ` <span class="badge badge-native">${nativeWord}</span>` : ''}</td>
+      <td>${d.aboveMid}</td><td>${d.belowMid}</td>
+      <td><span class="badge ${badges[d.best]}">${labels[d.best]}</span>${!p.isoIsMetadata ? ` <span style="font-size:0.8em;color:var(--dim);">${dr}st</span>` : ''}</td>
+    </tr>`;
+  });
+  // Update table header label
+  const thead = tbody.closest('table').querySelector('th');
+  if (thead) thead.textContent = p.isoLabel;
+}
+
+// ============================================================
+// INIT — wrapped in DOMContentLoaded for WebView compatibility
+// ============================================================
+function initApp() {
+  try {
+    // Tab logic
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var target = btn.dataset.tab;
+        var wasActive = btn.classList.contains('active');
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+        if (!wasActive) {
+          btn.classList.add('active');
+          document.getElementById('tab-' + target).classList.add('active');
+        }
+      });
+    });
+
+    // Event listeners for inputs
+    ['evHL','evSubj','evSH','camAperture','camND','fps','meterASA','camISO','shutterSpeed'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', analyze);
+        el.addEventListener('change', analyze);
+      }
+    });
+
+    // Profile selector
+    document.getElementById('profileSelect').addEventListener('change', function() {
+      loadProfile(this.value);
+    });
+
+    // Mode toggle (motion / stills)
+    document.getElementById('modeToggle').addEventListener('click', function() {
+      setMode(currentMode === 'motion' ? 'stills' : 'motion');
+    });
+
+    // Load default profile
+    loadProfile('red_komodo');
+  } catch(e) {
+    document.body.innerHTML = '<div style="color:red;padding:20px;font-size:14px;"><b>Init error:</b> ' + e.message + '<br><br>' + e.stack + '</div>';
+  }
+}
+
+// Run init: handle both cases — DOM ready or already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+</script>
+</body>
+</html>
