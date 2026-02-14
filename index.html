@@ -127,6 +127,16 @@
   .note { font-size: 0.85em; color: var(--muted); line-height: 1.5; margin-top: 8px; }
   .footer { font-size: 0.6em; color: var(--dim); margin-top: 10px; text-align: center; }
 
+  /* Disclaimer banner */
+  .disclaimer {
+    background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3);
+    border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;
+    font-size: 0.75em; line-height: 1.5; color: var(--text);
+  }
+  .disclaimer strong { color: var(--red); }
+  .disclaimer a { color: var(--blue); text-decoration: none; }
+  .disclaimer a:hover { text-decoration: underline; }
+
   /* Profile select */
   .profile-select {
     background: var(--card); border: 1px solid var(--border); color: var(--red);
@@ -146,6 +156,7 @@
     .profile-select { font-size: 0.95em; width: 100%; padding: 8px 6px; }
     .header h1 { font-size: 0.95em; }
     .header > span { width: 100%; font-size: 0.65em; }
+    .disclaimer { font-size: 0.7em; padding: 8px 10px; }
     .inputs { grid-template-columns: 1fr 1fr; gap: 6px; }
     .input-group input, .input-group select { padding: 10px 8px; font-size: 0.9em; }
     .camera-bar { grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -195,6 +206,13 @@
   </select>
   <h1 id="headerTitle">EXPOSURE</h1>
   <span>Lightmeter App &rarr; EV mode &rarr; 3 readings &rarr; go</span>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <strong>⚠️ WARNING:</strong> This tool is AI-generated and <strong>NOT TESTED</strong>. There is <strong>NO ACCOUNTABILITY</strong> for incorrect exposures. Use at your own risk. Always verify with on-set monitoring. 
+  <a href="https://github.com/windprak/exposuretool" target="_blank">GitHub</a> · 
+  <a href="https://github.com/windprak/exposuretool/blob/main/LICENSE" target="_blank">MIT License</a>
 </div>
 
 <!-- INPUTS - one compact row -->
@@ -576,7 +594,7 @@ function loadProfile(key) {
 
   // Update footer
   document.getElementById('footerText').innerHTML =
-    activeProfile.footer + ' &middot; Lightmeter App (LV @ ISO 100)';
+    activeProfile.footer + ' &middot; <a href="https://apps.apple.com/us/app/lightme-lightmeter/id1509033790" target="_blank" style="color:var(--blue);text-decoration:none;">LightMe Lightmeter App</a> (LV @ ISO 100)';
 
   // Update tab button labels
   const isoTabBtn = document.querySelector('[data-tab="iso"]');
