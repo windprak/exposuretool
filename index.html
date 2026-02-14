@@ -266,11 +266,11 @@
   <div class="cam-setting">
     <div class="cam-label">ND Filter</div>
     <select id="camND">
-      <option value="0">NONE</option>
+      <option value="0" selected>NONE</option>
       <option value="1">ND 0.3 (1)</option>
       <option value="2">ND 0.6 (2)</option>
       <option value="3">ND 0.9 (3)</option>
-      <option value="4" selected>ND 1.2 (4)</option>
+      <option value="4">ND 1.2 (4)</option>
       <option value="5">ND 1.5 (5)</option>
       <option value="6">ND 1.8 (6)</option>
       <option value="7">ND 2.1 (7)</option>
@@ -595,11 +595,6 @@ function loadProfile(key) {
     || activeProfile.isoData.find(d => d.label === 'Rated' || d.best === 'balanced')
     || activeProfile.isoData[0];
   isoSel.value = defaultEntry.iso;
-
-  // M11 specific: reset ND to none
-  if (key === 'leica_m11') {
-    document.getElementById('camND').value = '0';
-  }
 
   // Update page title and header
   document.title = `${activeProfile.name} Exposure — Lightmeter App`;
