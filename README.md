@@ -4,6 +4,12 @@
 
 ![Exposure Tool Interface](images/exposuretool.png)
 
+---
+
+**⚠️ DISCLAIMER:** This tool is largely AI-generated and **NOT TESTED**. There is **NO ACCOUNTABILITY** for incorrectly set exposures based on this tool. Use at your own risk. Always verify readings with on-set monitoring and your own judgment. This is an experimental reference tool, not production-ready software.
+
+---
+
 ## Why
 
 Your lightmeter tells you **what the light is**. This tool tells you **if your camera can capture it** — and how to set exposure to maximize dynamic range. It bridges the gap between metering and camera settings, accounting for real sensor/film latitude and ISO behavior.
@@ -39,3 +45,7 @@ The tool calculates if your scene contrast fits within your camera's dynamic ran
 - **Film**: Fixed rated speed — push/pull changes latitude and grain
 
 **Technical:** Single-file HTML app. No build, no dependencies. Mobile-responsive. Works offline.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
