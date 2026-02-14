@@ -596,6 +596,11 @@ function loadProfile(key) {
     || activeProfile.isoData[0];
   isoSel.value = defaultEntry.iso;
 
+  // M11 specific: reset ND to none
+  if (key === 'leica_m11') {
+    document.getElementById('camND').value = '0';
+  }
+
   // Update page title and header
   document.title = `${activeProfile.name} Exposure — Lightmeter App`;
 
