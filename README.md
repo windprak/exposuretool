@@ -2,52 +2,40 @@
 
 **Live App:** [https://exposuretool.netlify.app/](https://exposuretool.netlify.app/)
 
-A professional exposure calculator and lightmeter companion for cinematographers and photographers. Supports multiple camera and film stock profiles with real dynamic range data.
+![Exposure Tool Interface](images/exposuretool.png)
 
-## Features
+## Why
 
-- **7 Camera/Film Profiles:**
-  - RED Komodo (12.5 stops, ISO metadata)
-  - ARRI Alexa Mini (13.5 stops, EI metadata)
-  - Leica M11 (14.5 stops at base ISO 64, real gain)
-  - Kodak Vision3 50D, 250D, 500T (film stocks)
-  - Kodak Double-X B&W (film stock)
+Your lightmeter tells you **what the light is**. This tool tells you **if your camera can capture it** — and how to set exposure to maximize dynamic range. It bridges the gap between metering and camera settings, accounting for real sensor/film latitude and ISO behavior.
 
-- **3 Exposure Models:**
-  - Digital-cinema: ISO/EI as metadata (RED, ARRI)
-  - Digital-stills: ISO as real analog gain (Leica)
-  - Film: Fixed rated speed with push/pull options
+## How (Workflow)
 
-- **Motion/Stills Toggle:** Switch between FPS+shutter angle (motion) and direct shutter speeds (stills)
-
-- **Real-time Analysis:**
-  - Scene contrast vs sensor/film latitude
-  - Highlight and shadow margin calculations
-  - Profile-aware ISO/EI strategy suggestions
-  - Dynamic range visualization with EV scale
-
-## How to Use
-
-1. **Select your camera/film profile** from the dropdown
-2. **Take 3 lightmeter readings** (LV at ISO 100):
-   - Brightest highlight you want to retain
-   - Subject face/skin tone (18% gray)
-   - Deepest shadow you want detail in
-3. **Set your camera:** Aperture, ND, Shutter (FPS or speed), ISO/EI
+1. **Select your profile** — RED Komodo, ARRI Alexa Mini, Leica M11, or Kodak film stock
+2. **Meter your scene** — Take 3 readings with your lightmeter (LV @ ISO 100):
+   - **Highlight:** Brightest area you want detail in (sky, window, practical)
+   - **Face:** Subject skin tone (18% gray reference)
+   - **Shadow:** Deepest shadow you want texture in
+3. **Set your camera** — Enter aperture, ND, shutter (FPS or speed), ISO/EI
 4. **Read the analysis:**
-   - Green = safe headroom
-   - Yellow = tight but fits
-   - Red = clipping/crushing
+   - **Scene fits?** Green = safe, yellow = tight, red = exceeds DR
+   - **Margins:** How many stops of headroom before clipping/crushing
+   - **ISO strategy:** Profile-aware suggestion (ETTR, protect shadows, backlit handling, film push/pull)
+   - **DR bar:** Visual map showing where your readings land on the sensor/film window
 
-The tool calculates exposure delta, shows where your readings fall on the sensor/film window, and suggests optimal ISO/EI strategy based on scene characteristics (backlit, high contrast, dim, etc.).
+The tool calculates if your scene contrast fits within your camera's dynamic range at your chosen settings, shows exactly where highlights and shadows will fall, and suggests the optimal ISO/EI to maximize data capture.
 
-## Technical Design
+## What (Profiles & Models)
 
-- **Single-file HTML app** — no build process, no dependencies
-- **Profile-driven architecture** — each camera/film has its own DR curve, ISO behavior, and exposure model
-- **Mobile-responsive** — works on phones, tablets, desktop
-- **Offline-capable** — save to home screen, works without internet
+**7 Camera/Film Profiles:**
+- RED Komodo (12.5 stops, ISO metadata)
+- ARRI Alexa Mini (13.5 stops, EI metadata)
+- Leica M11 (14.5 stops @ ISO 64, real gain)
+- Kodak Vision3 50D, 250D, 500T
+- Kodak Double-X B&W
 
-## Deployment
+**3 Exposure Models:**
+- **Digital-cinema** (RED, ARRI): ISO/EI is metadata — sensor window fixed, ISO shifts mid gray within it
+- **Digital-stills** (Leica): ISO is real analog gain — DR shrinks at higher ISO
+- **Film**: Fixed rated speed — push/pull changes latitude and grain
 
-Hosted on Netlify. Auto-deploys from `main` branch.
+**Technical:** Single-file HTML app. No build, no dependencies. Mobile-responsive. Works offline.
