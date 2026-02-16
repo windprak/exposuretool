@@ -212,6 +212,7 @@
   <select id="profileSelect" class="profile-select">
     <option value="red_komodo">RED KOMODO</option>
     <option value="arri_alexa_mini">ARRI ALEXA MINI</option>
+    <option value="sony_fx6">SONY FX6 / FX3 / A7SIII</option>
     <option value="leica_m11">LEICA M11</option>
     <optgroup label="Film Stocks">
       <option value="kodak_50d">KODAK 50D</option>
@@ -476,6 +477,25 @@ const PROFILES = {
     ],
     notes: '<strong>Core concept:</strong> On ARRI, EI (Exposure Index) is metadata encoded in LogC. The sensor captures the same data regardless of EI setting.<br><br><strong>EI controls log encoding:</strong> Higher EI shifts mid gray down in LogC &rarr; more highlight headroom. Lower EI shifts mid gray up &rarr; more shadow detail visible.<br><br><strong>LogC workflow:</strong> Expose using false color. Mid gray at ~38% in LogC3. ARRI recommends slight overexposure for cleanest shadows.<br><br><strong>Highlight-biased design:</strong> At native EI 800, the Alexa Mini has ~7 stops above mid gray and ~6.5 below. Compared to RED&rsquo;s shadow bias (5.5/7.0), the ARRI gives ~1.5 stops more highlight headroom. ARRI&rsquo;s LogC curve allocates more code values to highlights for smooth rolloff.<br><br><strong>Always verify with ARRI false color</strong> or waveform. The Alexa Mini has 13.5 stops of usable DR.',
     footer: 'ARRI Alexa Mini &middot; Native EI 800 &middot; 13.5 stops DR &middot; EI is metadata (LogC)',
+    showRedStops: false,
+  },
+  'sony_fx6': {
+    name: 'Sony FX6 / FX3 / A7SIII', shortName: 'SONY FX6',
+    type: 'digital-cinema', defaultMode: 'motion',
+    nativeISO: 800, nativeISO2: 12800, isoLabel: 'EI', isoIsMetadata: true,
+    defaults: { aperture: '2.8', nd: 4, fps: '24-180' },
+    isoData: [
+      { iso: 200,   aboveMid: 4.3, belowMid: 7.4, best: 'shadow', label: 'Base 800' },
+      { iso: 400,   aboveMid: 5.3, belowMid: 6.4, best: 'shadow', label: 'Base 800' },
+      { iso: 800,   aboveMid: 6.3, belowMid: 5.4, best: 'balanced', label: 'Base 800' },
+      { iso: 1600,  aboveMid: 7.3, belowMid: 4.4, best: 'highlight', label: 'Base 800' },
+      { iso: 3200,  aboveMid: 8.3, belowMid: 3.4, best: 'highlight', label: 'Base 800' },
+      { iso: 12800, aboveMid: 6.0, belowMid: 5.2, best: 'balanced', label: 'Base 12800' },
+      { iso: 25600, aboveMid: 7.0, belowMid: 4.2, best: 'highlight', label: 'Base 12800' },
+      { iso: 51200, aboveMid: 8.0, belowMid: 3.2, best: 'highlight', label: 'Base 12800' },
+    ],
+    notes: '<strong>Core concept:</strong> In CineEI mode, the FX6/FX3/A7SIII records at one of two fixed base ISOs: 800 or 12800. EI adjustment is monitoring-only metadata &mdash; the sensor always captures at the selected base.<br><br><strong>Dual Base ISO:</strong> Base 800 gives 11.7 stops DR (SNR=2). Base 12800 gives 11.2 stops DR &mdash; only 0.5 stops less. Switch to Base 12800 for low-light work.<br><br><strong>S-Log3 workflow:</strong> Expose using zebras or false color. Mid gray sits at ~41% in S-Log3. ETTR for cleanest shadows, but protect highlights.<br><br><strong>EI is metadata:</strong> Changing EI shifts mid gray on your monitor/LUT but does NOT change what the sensor captures. Lower EI = more shadow detail visible on monitor. Higher EI = more highlight headroom visible.<br><br><strong>DR data from CineD lab test</strong> (FX6 internal XAVC-I, SGamut3.Cine/S-Log3).',
+    footer: 'Sony FX6/FX3/A7SIII &middot; Dual Base EI 800 / 12800 &middot; 11.7 stops DR (SNR=2) &middot; CineEI = metadata (S-Log3)',
     showRedStops: false,
   },
   'leica_m11': {
@@ -779,9 +799,11 @@ function analyze() {
   let nativeMidGrayEV, blackClipEV, whiteClipEV, TOTAL_DR;
 
   if (p.isoIsMetadata) {
-    // DIGITAL-CINEMA (RED, ARRI): fixed physical window at native ISO
+    // DIGITAL-CINEMA (RED, ARRI, Sony): fixed physical window at native ISO
+    // Dual base ISO: switch sensor window when selected ISO >= second base
     nativeMidGrayEV = evSubj + (Av_camera - Av_subj);
-    const nativeEntry = isoData.find(d => d.iso === p.nativeISO) || isoData[0];
+    const baseISO = (p.nativeISO2 && selectedISO >= p.nativeISO2) ? p.nativeISO2 : p.nativeISO;
+    const nativeEntry = isoData.find(d => d.iso === baseISO) || isoData[0];
     blackClipEV = nativeMidGrayEV - nativeEntry.belowMid;
     whiteClipEV = nativeMidGrayEV + nativeEntry.aboveMid;
     TOTAL_DR = nativeEntry.aboveMid + nativeEntry.belowMid;
