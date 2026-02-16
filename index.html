@@ -214,11 +214,19 @@
     <option value="arri_alexa_mini">ARRI ALEXA MINI</option>
     <option value="sony_fx6">SONY FX6 / FX3 / A7SIII</option>
     <option value="leica_m11">LEICA M11</option>
-    <optgroup label="Film Stocks">
+    <optgroup label="Motion Film">
       <option value="kodak_50d">KODAK 50D</option>
       <option value="kodak_250d">KODAK 250D</option>
       <option value="kodak_500t">KODAK 500T</option>
       <option value="kodak_double_x">DOUBLE-X (B&W)</option>
+    </optgroup>
+    <optgroup label="Stills Film">
+      <option value="portra_160">PORTRA 160</option>
+      <option value="portra_400">PORTRA 400</option>
+      <option value="portra_800">PORTRA 800</option>
+      <option value="ektar_100">EKTAR 100</option>
+      <option value="kodak_400tx">TRI-X 400 (B&W)</option>
+      <option value="kodak_tmax_3200">T-MAX P3200 (B&W)</option>
     </optgroup>
   </select>
   <h1 id="headerTitle">EXPOSURE</h1>
@@ -567,7 +575,7 @@ const PROFILES = {
   },
   'kodak_double_x': {
     name: 'Kodak Double-X', shortName: 'XX B&W',
-    type: 'film', defaultMode: 'motion', isFilm: true,
+    type: 'film', defaultMode: 'motion', isFilm: true, isBW: true,
     nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
     defaults: { aperture: '2.8', nd: 1, fps: '24-180' },
     isoData: [
@@ -578,6 +586,98 @@ const PROFILES = {
     ],
     notes: '<strong>Film latitude:</strong> Kodak Double-X 5222 is a classic B&W negative stock with ~11 stops of range. Less latitude than color negative but beautiful tonal response.<br><br><strong>Expose generously:</strong> B&W negative handles overexposure reasonably well. Underexposure loses shadow detail quickly. Meter carefully.<br><br><strong>Development matters:</strong> Double-X is very developer-dependent. D-96 (standard) gives moderate contrast. Rodinal pushes grain and contrast. HC-110 is versatile.<br><br><strong>Push/Pull:</strong> Push +1 (500) is very common. Adds grit and contrast (classic war/noir look). Push +2 (1000) is aggressive but usable.',
     footer: 'Kodak Double-X 5222 (B&W) &middot; EI 250 &middot; ~11 stops &middot; Developer dependent',
+    showRedStops: false,
+  },
+  // === STILLS FILM ===
+  'portra_160': {
+    name: 'Kodak Portra 160', shortName: 'PORTRA 160',
+    type: 'film', defaultMode: 'stills', isFilm: true,
+    nativeISO: 160, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/125' },
+    isoData: [
+      { iso: 80,  aboveMid: 8.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
+      { iso: 160, aboveMid: 7.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 320, aboveMid: 7.0, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+      { iso: 640, aboveMid: 6.5, belowMid: 3.5, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Portra 160 has ~13 stops of usable range with an exceptionally gentle highlight shoulder. Fine grain, natural colors, superb skin tones.<br><br><strong>Expose for shadows:</strong> Portra handles overexposure beautifully &mdash; 3+ stops over still yields usable results. Underexposure gets thin and grainy fast. When in doubt, overexpose.<br><br><strong>Push/Pull:</strong> Push +1 (320) adds warmth and contrast. Pull -1 (80) for ultra-fine grain and softer tones. Portra tolerates push/pull well.<br><br><strong>Best for:</strong> Portraits, weddings, editorial. Daylight balanced (5500K).<br><br><strong>DR values derived from Kodak characteristic curves (C-41).</strong>',
+    footer: 'Kodak Portra 160 &middot; ISO 160 &middot; ~13 stops &middot; C-41 &middot; Gentle highlight shoulder',
+    showRedStops: false,
+  },
+  'portra_400': {
+    name: 'Kodak Portra 400', shortName: 'PORTRA 400',
+    type: 'film', defaultMode: 'stills', isFilm: true,
+    nativeISO: 400, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/500' },
+    isoData: [
+      { iso: 200, aboveMid: 8.0, belowMid: 5.5, best: 'shadow', label: 'Pull -1' },
+      { iso: 400, aboveMid: 7.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 800, aboveMid: 7.0, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+      { iso: 1600,aboveMid: 6.5, belowMid: 3.5, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Portra 400 is the king of latitude &mdash; ~13 stops of usable range with the best highlight tolerance of any stills film. Medium grain, versatile in any light.<br><br><strong>Expose for shadows:</strong> Portra 400 can handle 3&ndash;5 stops of overexposure and still retain highlight detail. Underexposure loses shadow texture fast. Always err on the side of more light.<br><br><strong>Push/Pull:</strong> Push +1 (800) is very common, adds contrast and warmth. Push +2 (1600) is usable but grainy. Pull -1 (200) for finer grain.<br><br><strong>Best for:</strong> Portraits, weddings, street, travel &mdash; the all-rounder. Daylight balanced.<br><br><strong>DR values derived from Kodak characteristic curves (C-41).</strong>',
+    footer: 'Kodak Portra 400 &middot; ISO 400 &middot; ~13 stops &middot; C-41 &middot; Best overall latitude',
+    showRedStops: false,
+  },
+  'portra_800': {
+    name: 'Kodak Portra 800', shortName: 'PORTRA 800',
+    type: 'film', defaultMode: 'stills', isFilm: true,
+    nativeISO: 800, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/125' },
+    isoData: [
+      { iso: 400, aboveMid: 7.5, belowMid: 5.5, best: 'shadow', label: 'Pull -1' },
+      { iso: 800, aboveMid: 7.0, belowMid: 5.0, best: 'balanced', label: 'Rated' },
+      { iso: 1600,aboveMid: 6.5, belowMid: 4.0, best: 'highlight', label: 'Push +1' },
+      { iso: 3200,aboveMid: 6.0, belowMid: 3.0, best: 'highlight', label: 'Push +2' },
+    ],
+    notes: '<strong>Film latitude:</strong> Portra 800 has ~12 stops of usable range. Coarser grain than 160/400 but still Portra color science. Great for low light and indoor work.<br><br><strong>Expose for shadows:</strong> Like all Portra, handles overexposure well (2&ndash;3 stops). Underexposure shows grain quickly at this speed.<br><br><strong>Push/Pull:</strong> Push +1 (1600) adds noticeable grain and contrast. Pull -1 (400) for smoother results. Older emulsion than Portra 160/400.<br><br><strong>Best for:</strong> Low light, indoor events, concert/music photography. Daylight balanced.<br><br><strong>DR values derived from Kodak characteristic curves (C-41).</strong>',
+    footer: 'Kodak Portra 800 &middot; ISO 800 &middot; ~12 stops &middot; C-41 &middot; Low light Portra',
+    showRedStops: false,
+  },
+  'ektar_100': {
+    name: 'Kodak Ektar 100', shortName: 'EKTAR 100',
+    type: 'film', defaultMode: 'stills', isFilm: true,
+    nativeISO: 100, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '8', nd: 0, shutterSpeed: 's-1/125' },
+    isoData: [
+      { iso: 50,  aboveMid: 7.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
+      { iso: 100, aboveMid: 6.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 200, aboveMid: 6.0, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+    ],
+    notes: '<strong>Film latitude:</strong> Ektar 100 has ~12 stops of usable range. Finest grain of any color negative film. Extremely saturated, high contrast &mdash; designed for landscapes, not portraits.<br><br><strong>Expose carefully:</strong> Ektar is less forgiving than Portra. It handles 2&ndash;3 stops of overexposure but underexposure gets muddy fast. Tighter latitude window than Portra.<br><br><strong>Push/Pull:</strong> Push +1 (200) is possible but increases contrast further. Pull -1 (50) for slightly softer results. Limited push range compared to Portra.<br><br><strong>Skin tones:</strong> Tends to render skin red/magenta &mdash; not ideal for portraits.<br><br><strong>Best for:</strong> Landscapes, architecture, product photography. Daylight balanced.<br><br><strong>DR values derived from Kodak characteristic curves (C-41).</strong>',
+    footer: 'Kodak Ektar 100 &middot; ISO 100 &middot; ~12 stops &middot; C-41 &middot; Finest grain color negative',
+    showRedStops: false,
+  },
+  'kodak_400tx': {
+    name: 'Kodak Tri-X 400', shortName: 'TRI-X 400',
+    type: 'film', defaultMode: 'stills', isFilm: true, isBW: true,
+    nativeISO: 400, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/500' },
+    isoData: [
+      { iso: 200, aboveMid: 6.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
+      { iso: 400, aboveMid: 5.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
+      { iso: 800, aboveMid: 5.0, belowMid: 4.5, best: 'highlight', label: 'Push +1' },
+      { iso: 1600,aboveMid: 4.5, belowMid: 3.5, best: 'highlight', label: 'Push +2' },
+      { iso: 3200,aboveMid: 4.0, belowMid: 3.0, best: 'highlight', label: 'Push +3' },
+    ],
+    notes: '<strong>Film latitude:</strong> Tri-X 400TX has ~11 stops of usable range (standard D-76 development). The most iconic B&W film ever made &mdash; rich midtones, strong contrast, beautiful grain.<br><br><strong>Expose generously:</strong> B&W negative handles overexposure reasonably well. Underexposure loses shadow texture. Meter for shadows.<br><br><strong>Extremely pushable:</strong> Push +1 (800) is very common and adds classic grit. Push +2 (1600) is usable with more grain. Push +3 (3200) is aggressive but iconic for street/documentary work. HC-110 and D-76 are popular developers.<br><br><strong>Development matters:</strong> D-76 (standard, smooth), HC-110 (versatile, slightly sharper), Rodinal (maximum grain/sharpness, stand development possible).<br><br><strong>DR depends on developer and development time.</strong>',
+    footer: 'Kodak Tri-X 400TX (B&W) &middot; ISO 400 &middot; ~11 stops &middot; Developer dependent',
+    showRedStops: false,
+  },
+  'kodak_tmax_3200': {
+    name: 'Kodak T-Max P3200', shortName: 'TMAX 3200',
+    type: 'film', defaultMode: 'stills', isFilm: true, isBW: true,
+    nativeISO: 1000, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/125' },
+    isoData: [
+      { iso: 800, aboveMid: 5.5, belowMid: 5.0, best: 'shadow', label: 'EI 800' },
+      { iso: 1000,aboveMid: 5.0, belowMid: 4.5, best: 'balanced', label: 'Rated' },
+      { iso: 1600,aboveMid: 4.5, belowMid: 4.0, best: 'balanced', label: 'EI 1600' },
+      { iso: 3200,aboveMid: 4.0, belowMid: 3.5, best: 'highlight', label: 'EI 3200' },
+      { iso: 6400,aboveMid: 3.5, belowMid: 3.0, best: 'highlight', label: 'EI 6400' },
+    ],
+    notes: '<strong>Multi-speed film:</strong> T-Max P3200 is a T-GRAIN emulsion with a true sensitivity of ~ISO 800&ndash;1000. The &ldquo;3200&rdquo; designation means it&rsquo;s designed to be pushed to EI 3200 or higher with extended development.<br><br><strong>Ultra high speed:</strong> Best results at EI 800&ndash;1600 for maximum tonal range. At EI 3200, ~7.5 stops of usable range with visible but structured grain. At EI 6400, ~6.5 stops &mdash; usable for extreme low light.<br><br><strong>Development critical:</strong> T-Max developer recommended. D-76 works but T-Max Dev gives finer grain. Development times vary dramatically by speed rating.<br><br><strong>Best for:</strong> Low light, indoor sports, concert, surveillance, astrophotography. When you need speed above all else.<br><br><strong>DR values derived from Kodak T-Max P3200 data sheet (F-4001).</strong>',
+    footer: 'Kodak T-Max P3200 (B&W) &middot; True ISO ~1000 &middot; Multi-speed EI 800&ndash;6400 &middot; T-GRAIN',
     showRedStops: false,
   },
 };
@@ -1149,14 +1249,16 @@ function analyze() {
   const winR = Math.min(100, evToPct(whiteClipEV));
   const winW = winR - winL;
   const midInWin = winW > 0 ? ((evToPct(actualMidGrayEV) - winL) / winW * 100) : 50;
-  const winGrad = p.isFilm
+  const winGrad = p.isBW
+    ? `linear-gradient(90deg, #0a0a0a 0%, #1a1a1a 15%, #444 ${midInWin*0.85}%, #777 ${midInWin}%, #999 ${midInWin*1.1}%, #bbb ${midInWin*1.25}%, #ddd 88%, #eee 100%)`
+    : p.isFilm
     ? `linear-gradient(90deg, #1a0a0a 0%, #3a2a1a 15%, #665533 ${midInWin*0.85}%, #887744 ${midInWin}%, #aa9955 ${midInWin*1.1}%, #ccbb77 ${midInWin*1.25}%, #eedd99 88%, #ffe 100%)`
     : `linear-gradient(90deg, #0a0a20 0%, #1a1a3a 18%, #444 ${midInWin*0.85}%, #888 ${midInWin}%, #cc9 ${midInWin*1.1}%, #eec ${midInWin*1.25}%, #ffe 88%, #fff 100%)`;
   const sensorWin = `<div style="position:absolute;left:${winL}%;top:0;width:${winW}%;height:100%;
     background:${winGrad};border-radius:4px;z-index:1;"></div>`;
 
   // Clip/limit edges
-  const clipColor = p.isFilm ? '#c97' : 'var(--red)';
+  const clipColor = p.isBW ? '#999' : p.isFilm ? '#c97' : 'var(--red)';
   const bEdge = `<div style="position:absolute;left:${winL}%;top:0;height:100%;width:2px;background:${clipColor};z-index:4;"></div>`;
   const wEdge = `<div style="position:absolute;left:${winR}%;top:0;height:100%;width:2px;background:${clipColor};z-index:4;transform:translateX(-2px);"></div>`;
 
