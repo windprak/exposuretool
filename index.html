@@ -214,6 +214,7 @@
     <option value="arri_alexa_mini">ARRI ALEXA MINI</option>
     <option value="sony_fx6">SONY FX6 / FX3 / A7SIII</option>
     <option value="leica_m11">LEICA M11</option>
+    <option value="leica_m11_mono">LEICA M11 MONOCHROM</option>
     <optgroup label="Motion Film">
       <option value="kodak_50d">KODAK 50D</option>
       <option value="kodak_250d">KODAK 250D</option>
@@ -526,6 +527,27 @@ const PROFILES = {
     ],
     notes: '<strong>Core concept:</strong> On the Leica M11, ISO is real analog gain. Higher ISO amplifies the signal AND the noise &mdash; dynamic range shrinks.<br><br><strong>Dual base ISO:</strong> ISO 64 (first base, ~14.8 stops) and ISO 200 (second base, ~14.1 stops). The dual gain circuit at ISO 200 keeps DR almost as high as ISO 100. Use the lowest ISO your exposure allows.<br><br><strong>ISO is NOT metadata:</strong> Unlike cinema cameras, changing ISO changes what the sensor captures. Higher ISO = less DR, more noise.<br><br><strong>Shoot RAW (DNG):</strong> Leica DNG gives ~1 stop extra highlight recovery. ETTR is valuable &mdash; push exposure right at base ISO for maximum data.<br><br><strong>DR values based on real measurements.</strong>',
     footer: 'Leica M11 &middot; Dual Base ISO 64 / 200 &middot; 14.8 stops DR (base) &middot; ISO is real gain',
+    showRedStops: false,
+  },
+  'leica_m11_mono': {
+    name: 'Leica M11 Monochrom', shortName: 'M11 MONO',
+    type: 'digital-stills', defaultMode: 'stills', isBW: true,
+    nativeISO: 125, nativeISO2: 400, isoLabel: 'ISO', isoIsMetadata: false,
+    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/250' },
+    isoData: [
+      { iso: 125,   aboveMid: 7.5, belowMid: 5.8, best: 'balanced' },
+      { iso: 200,   aboveMid: 7.4, belowMid: 6.0, best: 'balanced' },
+      { iso: 400,   aboveMid: 7.2, belowMid: 5.6, best: 'balanced', label: '2nd Base' },
+      { iso: 800,   aboveMid: 6.7, belowMid: 5.2, best: 'balanced' },
+      { iso: 1600,  aboveMid: 6.2, belowMid: 4.8, best: 'balanced' },
+      { iso: 3200,  aboveMid: 5.6, belowMid: 4.3, best: 'highlight' },
+      { iso: 6400,  aboveMid: 5.1, belowMid: 4.0, best: 'highlight' },
+      { iso: 12500, aboveMid: 4.7, belowMid: 3.6, best: 'highlight' },
+      { iso: 25000, aboveMid: 4.3, belowMid: 3.2, best: 'highlight' },
+      { iso: 50000, aboveMid: 3.7, belowMid: 2.8, best: 'highlight' },
+    ],
+    notes: '<strong>Core concept:</strong> Same 60MP BSI sensor as M11 but with no Bayer color filter array &mdash; every pixel captures pure luminance. ISO is real analog gain.<br><br><strong>Dual base ISO:</strong> ISO 125 (first base, ~13.3 stops) and ISO 400 (second base, ~12.8 stops). The dual gain circuit at ISO 400 keeps DR almost as high as ISO 200.<br><br><strong>No CFA advantage:</strong> Without the color filter, each pixel receives ~1 stop more light. However, the base ISO starts at 125 (vs M11&rsquo;s 64), so total DR at base is ~0.5&ndash;0.8 stops less than M11. At high ISOs, the gap narrows and the Monochrom converges with M11.<br><br><strong>ISO is NOT metadata:</strong> Higher ISO = less DR, more noise. Shoot at the lowest ISO your exposure allows.<br><br><strong>Shoot RAW (DNG):</strong> ETTR is valuable. The Monochrom&rsquo;s lack of demosaicing means sharper detail and cleaner tonal gradations per pixel.<br><br><strong>DR values estimated from M11 measurements, offset by Photons to Photos M11 vs M11 Monochrom comparison data.</strong>',
+    footer: 'Leica M11 Monochrom &middot; Dual Base ISO 125 / 400 &middot; ~13.3 stops DR (base) &middot; No CFA &middot; B&W only',
     showRedStops: false,
   },
   'kodak_50d': {
