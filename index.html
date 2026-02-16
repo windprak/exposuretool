@@ -510,7 +510,7 @@ const PROFILES = {
     name: 'Leica M11', shortName: 'LEICA M11',
     type: 'digital-stills', defaultMode: 'stills',
     nativeISO: 64, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/60' },
+    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/125' },
     isoData: [
       { iso: 64,    aboveMid: 8.3, belowMid: 6.5, best: 'balanced' },
       { iso: 100,   aboveMid: 8.0, belowMid: 6.2, best: 'balanced' },
@@ -532,7 +532,7 @@ const PROFILES = {
     name: 'Kodak Vision3 50D', shortName: '50D',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 50, isoLabel: 'EI', isoIsMetadata: false,
-    defaults: { aperture: '2.8', nd: 2, fps: '24-180' },
+    defaults: { aperture: '2', nd: 1, fps: '24-180' },
     isoData: [
       { iso: 25,  aboveMid: 8.0, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
       { iso: 50,  aboveMid: 7.5, belowMid: 6.0, best: 'balanced', label: 'Rated' },
@@ -547,7 +547,7 @@ const PROFILES = {
     name: 'Kodak Vision3 250D', shortName: '250D',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
-    defaults: { aperture: '2.8', nd: 3, fps: '24-180' },
+    defaults: { aperture: '2.8', nd: 2, fps: '24-180' },
     isoData: [
       { iso: 125, aboveMid: 7.5, belowMid: 6.5, best: 'shadow', label: 'Pull -1' },
       { iso: 250, aboveMid: 7.0, belowMid: 6.0, best: 'balanced', label: 'Rated' },
@@ -562,7 +562,7 @@ const PROFILES = {
     name: 'Kodak Vision3 500T', shortName: '500T',
     type: 'film', defaultMode: 'motion', isFilm: true,
     nativeISO: 500, isoLabel: 'EI', isoIsMetadata: false,
-    defaults: { aperture: '2', nd: 0, fps: '24-180' },
+    defaults: { aperture: '2.8', nd: 3, fps: '24-180' },
     isoData: [
       { iso: 250, aboveMid: 7.5, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
       { iso: 500, aboveMid: 7.0, belowMid: 5.5, best: 'balanced', label: 'Rated' },
@@ -577,7 +577,7 @@ const PROFILES = {
     name: 'Kodak Double-X', shortName: 'XX B&W',
     type: 'film', defaultMode: 'motion', isFilm: true, isBW: true,
     nativeISO: 250, isoLabel: 'EI', isoIsMetadata: false,
-    defaults: { aperture: '2.8', nd: 1, fps: '24-180' },
+    defaults: { aperture: '2.8', nd: 2, fps: '24-180' },
     isoData: [
       { iso: 125, aboveMid: 6.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
       { iso: 250, aboveMid: 5.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
@@ -593,7 +593,7 @@ const PROFILES = {
     name: 'Kodak Portra 160', shortName: 'PORTRA 160',
     type: 'film', defaultMode: 'stills', isFilm: true,
     nativeISO: 160, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/125' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/125' },
     isoData: [
       { iso: 80,  aboveMid: 6.5, belowMid: 4.5, best: 'shadow', label: 'Pull -1' },
       { iso: 160, aboveMid: 6.0, belowMid: 4.0, best: 'balanced', label: 'Rated' },
@@ -608,7 +608,7 @@ const PROFILES = {
     name: 'Kodak Portra 400', shortName: 'PORTRA 400',
     type: 'film', defaultMode: 'stills', isFilm: true,
     nativeISO: 400, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/500' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/500' },
     isoData: [
       { iso: 200, aboveMid: 7.5, belowMid: 5.5, best: 'shadow', label: 'Pull -1' },
       { iso: 400, aboveMid: 7.0, belowMid: 5.0, best: 'balanced', label: 'Rated' },
@@ -623,7 +623,7 @@ const PROFILES = {
     name: 'Kodak Portra 800', shortName: 'PORTRA 800',
     type: 'film', defaultMode: 'stills', isFilm: true,
     nativeISO: 800, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/125' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/1000' },
     isoData: [
       { iso: 400, aboveMid: 7.0, belowMid: 5.0, best: 'shadow', label: 'Pull -1' },
       { iso: 800, aboveMid: 6.5, belowMid: 5.0, best: 'balanced', label: 'Rated' },
@@ -638,7 +638,7 @@ const PROFILES = {
     name: 'Kodak Ektar 100', shortName: 'EKTAR 100',
     type: 'film', defaultMode: 'stills', isFilm: true,
     nativeISO: 100, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '8', nd: 0, shutterSpeed: 's-1/125' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/125' },
     isoData: [
       { iso: 50,  aboveMid: 6.0, belowMid: 5.0, best: 'shadow', label: 'Pull -1' },
       { iso: 100, aboveMid: 5.5, belowMid: 4.5, best: 'balanced', label: 'Rated' },
@@ -652,7 +652,7 @@ const PROFILES = {
     name: 'Kodak Tri-X 400', shortName: 'TRI-X 400',
     type: 'film', defaultMode: 'stills', isFilm: true, isBW: true,
     nativeISO: 400, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '5.6', nd: 0, shutterSpeed: 's-1/500' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/500' },
     isoData: [
       { iso: 200, aboveMid: 6.0, belowMid: 6.0, best: 'shadow', label: 'Pull -1' },
       { iso: 400, aboveMid: 5.5, belowMid: 5.5, best: 'balanced', label: 'Rated' },
@@ -668,7 +668,7 @@ const PROFILES = {
     name: 'Kodak T-Max P3200', shortName: 'TMAX 3200',
     type: 'film', defaultMode: 'stills', isFilm: true, isBW: true,
     nativeISO: 1000, isoLabel: 'ISO', isoIsMetadata: false,
-    defaults: { aperture: '2', nd: 0, shutterSpeed: 's-1/125' },
+    defaults: { aperture: '2.8', nd: 0, shutterSpeed: 's-1/1000' },
     isoData: [
       { iso: 800, aboveMid: 5.5, belowMid: 5.0, best: 'shadow', label: 'EI 800' },
       { iso: 1000,aboveMid: 5.0, belowMid: 4.5, best: 'balanced', label: 'Rated' },
